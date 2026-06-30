@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(command -v python3)",
+      "Bash(command -v php)",
+      "mcp__Claude_Preview__preview_start",
+      "Bash([ -f \"$f\" ])",
+      "mcp__91a3f65d-355d-4b72-9fc6-ed8a34f4921b__get_file_metadata",
+      "WebFetch(domain:docs.google.com)"
+    ]
+  }
+}

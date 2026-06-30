@@ -1,0 +1,1537 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Sugar Shot Work Tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0f1115; --panel:#171a21; --panel-2:#1e222c; --line:#2a2f3a;
+    --text:#e8eaf0; --muted:#9aa3b2; --muted-2:#6b7384;
+    /* Supervisor = light red shade */
+    --sup:#e0566a; --sup-soft:#3a1f25; --sup-tint:#f8d7da; --sup-deep:#c0392b;
+    /* Expert = golden shade */
+    --exp:#e8b13a; --exp-soft:#3a2f12; --exp-tint:#f6e6b8; --exp-deep:#b8860b;
+    --ok:#3fbf7f; --warn:#e8b13a; --bad:#e0566a; --info:#5b9bd5;
+    --radius:14px; --shadow:0 10px 30px rgba(0,0,0,.35);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%}
+  body{
+    background:radial-gradient(1200px 600px at 80% -10%, #1b2030 0%, var(--bg) 55%);
+    color:var(--text); font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  a{color:inherit}
+  button{font:inherit;cursor:pointer;border:none;background:none;color:inherit}
+  input,select,textarea{font:inherit;color:var(--text)}
+  .hidden{display:none !important}
+
+  /* ---------- Brand / header ---------- */
+  .brandbar{display:flex;align-items:center;gap:14px;padding:16px 26px;border-bottom:1px solid var(--line);
+    background:linear-gradient(90deg, rgba(224,86,106,.10), rgba(232,177,58,.10));}
+  .logo{width:40px;height:40px;border-radius:11px;display:grid;place-items:center;font-weight:800;font-size:20px;
+    background:conic-gradient(from 200deg,var(--sup),var(--exp));color:#1b1b1b;box-shadow:var(--shadow)}
+  .brand h1{font-size:18px;margin:0;letter-spacing:.3px}
+  .brand p{margin:0;color:var(--muted);font-size:12px}
+  .spacer{flex:1}
+  .pill{font-size:12px;color:var(--muted);border:1px solid var(--line);padding:6px 11px;border-radius:999px;background:var(--panel)}
+
+  /* ---------- Landing ---------- */
+  .wrap{max-width:1280px;margin:0 auto;padding:26px}
+  .landing{min-height:70vh;display:grid;place-items:center}
+  .landing-inner{width:100%;max-width:820px;text-align:center}
+  .landing h2{font-size:30px;margin:6px 0 6px}
+  .landing .sub{color:var(--muted);margin-bottom:34px}
+  .channels{display:grid;grid-template-columns:1fr 1fr;gap:22px}
+  .channel{border-radius:var(--radius);padding:34px 26px;border:1px solid var(--line);text-align:left;
+    transition:transform .15s ease, box-shadow .15s ease;position:relative;overflow:hidden}
+  .channel:hover{transform:translateY(-3px);box-shadow:var(--shadow)}
+  .channel .tag{font-size:12px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase}
+  .channel h3{font-size:24px;margin:10px 0 8px}
+  .channel p{color:var(--muted);margin:0 0 22px;min-height:42px}
+  .channel .go{display:inline-flex;align-items:center;gap:8px;font-weight:700;padding:11px 18px;border-radius:10px}
+  .ch-sup{background:linear-gradient(160deg, rgba(224,86,106,.16), rgba(224,86,106,.04));border-color:rgba(224,86,106,.5)}
+  .ch-sup .tag{color:var(--sup)} .ch-sup .go{background:var(--sup);color:#221015}
+  .ch-exp{background:linear-gradient(160deg, rgba(232,177,58,.16), rgba(232,177,58,.04));border-color:rgba(232,177,58,.5)}
+  .ch-exp .tag{color:var(--exp)} .ch-exp .go{background:var(--exp);color:#241c08}
+  .channel .glow{position:absolute;width:240px;height:240px;border-radius:50%;filter:blur(60px);opacity:.25;right:-60px;top:-60px}
+  .ch-sup .glow{background:var(--sup)} .ch-exp .glow{background:var(--exp)}
+
+  /* ---------- Login ---------- */
+  .auth{max-width:430px;margin:6vh auto;background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);
+    padding:30px;box-shadow:var(--shadow)}
+  .auth.sup{border-top:4px solid var(--sup)}
+  .auth.exp{border-top:4px solid var(--exp)}
+  .auth h3{margin:2px 0 4px;font-size:22px}
+  .auth .lead{color:var(--muted);font-size:13px;margin-bottom:20px}
+  label{display:block;font-size:12px;color:var(--muted);margin:14px 0 6px;font-weight:600;letter-spacing:.3px}
+  .field{width:100%;background:var(--panel-2);border:1px solid var(--line);border-radius:10px;padding:11px 12px;outline:none}
+  .field:focus{border-color:var(--info)}
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:11px 16px;border-radius:10px;font-weight:700;border:1px solid var(--line);background:var(--panel-2)}
+  .btn:hover{filter:brightness(1.08)}
+  .btn-sup{background:var(--sup);color:#221015;border-color:transparent}
+  .btn-exp{background:var(--exp);color:#241c08;border-color:transparent}
+  .btn-ghost{background:transparent}
+  .btn-block{width:100%;margin-top:18px}
+  .btn-sm{padding:7px 11px;font-size:13px;border-radius:8px}
+  .err{color:var(--bad);font-size:13px;margin-top:12px;min-height:18px}
+  .hint{margin-top:18px;padding:12px;border:1px dashed var(--line);border-radius:10px;background:var(--panel-2);font-size:12px;color:var(--muted)}
+  .hint b{color:var(--text)}
+  .backlink{display:inline-block;margin-bottom:14px;color:var(--muted);font-size:13px}
+
+  /* ---------- App shell ---------- */
+  .shell{display:grid;grid-template-columns:248px 1fr;min-height:calc(100vh - 73px)}
+  .side{border-right:1px solid var(--line);padding:18px 14px;background:var(--panel)}
+  .side .who{padding:12px;border-radius:12px;background:var(--panel-2);border:1px solid var(--line);margin-bottom:16px}
+  .side .who .role{font-size:11px;letter-spacing:1px;text-transform:uppercase;font-weight:700}
+  .side.sup .who .role{color:var(--sup)} .side.exp .who .role{color:var(--exp)}
+  .side .who .name{font-weight:700;font-size:16px;margin-top:2px}
+  .side .who .meta{color:var(--muted);font-size:12px;margin-top:3px}
+  .navitem{display:flex;align-items:center;gap:11px;padding:11px 12px;border-radius:10px;color:var(--muted);font-weight:600;margin-bottom:3px;width:100%;text-align:left}
+  .navitem .ic{width:22px;text-align:center}
+  .navitem:hover{background:var(--panel-2);color:var(--text)}
+  .navitem.active{color:var(--text)}
+  .side.sup .navitem.active{background:rgba(224,86,106,.16);color:#ffd2d9}
+  .side.exp .navitem.active{background:rgba(232,177,58,.16);color:#ffe9b0}
+  .navcount{margin-left:auto;font-size:11px;background:var(--panel-2);border:1px solid var(--line);border-radius:999px;padding:1px 8px;color:var(--muted)}
+
+  .main{padding:24px 28px;overflow:auto}
+  .page-head{display:flex;align-items:center;gap:14px;margin-bottom:18px}
+  .page-head h2{margin:0;font-size:22px}
+  .page-head .desc{color:var(--muted);font-size:13px}
+
+  /* ---------- Banner / notifications ---------- */
+  .banner{display:flex;align-items:center;gap:12px;padding:12px 16px;border-radius:12px;margin-bottom:16px;border:1px solid}
+  .banner.warn{background:rgba(232,177,58,.10);border-color:rgba(232,177,58,.4);color:#ffe9b0}
+  .banner.bad{background:rgba(224,86,106,.10);border-color:rgba(224,86,106,.4);color:#ffd2d9}
+  .banner .btn{margin-left:auto}
+  .bell{position:relative}
+  .bell .dot{position:absolute;top:-3px;right:-3px;width:9px;height:9px;border-radius:50%;background:var(--bad);border:2px solid var(--panel)}
+
+  /* ---------- Cards / grid ---------- */
+  .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px;margin-bottom:20px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:16px}
+  .card .k{color:var(--muted);font-size:12px;letter-spacing:.4px;text-transform:uppercase}
+  .card .v{font-size:26px;font-weight:800;margin-top:6px}
+  .card .v.sm{font-size:18px}
+
+  /* ---------- Tables ---------- */
+  .tablewrap{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);overflow:auto}
+  table{border-collapse:collapse;width:100%;font-size:13.5px;min-width:920px}
+  th,td{padding:11px 12px;text-align:left;border-bottom:1px solid var(--line);white-space:nowrap}
+  th{color:var(--muted);font-weight:600;font-size:11.5px;letter-spacing:.5px;text-transform:uppercase;position:sticky;top:0;background:var(--panel);z-index:1}
+  tbody tr:hover{background:var(--panel-2)}
+  td.num{text-align:right;font-variant-numeric:tabular-nums}
+  .expert-cell{color:var(--exp);font-weight:700;cursor:pointer;text-decoration:underline dotted}
+  .supervisor-cell{color:var(--sup);font-weight:700}
+
+  .badge{display:inline-block;font-size:11px;font-weight:700;padding:3px 9px;border-radius:999px;letter-spacing:.3px}
+  .b-active{background:rgba(91,155,213,.18);color:#a9cdf0}
+  .b-completed{background:rgba(63,191,127,.16);color:#9be8c0}
+  .b-lost{background:rgba(224,86,106,.16);color:#ffb3bd}
+  .b-await{background:rgba(232,177,58,.16);color:#ffe1a0}
+  .b-assigned{background:rgba(63,191,127,.16);color:#9be8c0}
+  .b-unassigned{background:rgba(150,150,150,.18);color:#c8cdd6}
+  .b-locked{background:rgba(91,155,213,.18);color:#a9cdf0}
+
+  .empty{padding:46px;text-align:center;color:var(--muted)}
+  .toolbar{display:flex;gap:10px;align-items:center;margin-bottom:14px;flex-wrap:wrap}
+  .search{flex:1;min-width:200px}
+
+  /* ---------- Expert list ---------- */
+  .exgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px}
+  .excard{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:18px;cursor:pointer;transition:.15s}
+  .excard:hover{transform:translateY(-2px);box-shadow:var(--shadow);border-color:rgba(232,177,58,.5)}
+  .ava{width:46px;height:46px;border-radius:50%;display:grid;place-items:center;font-weight:800;color:#241c08;background:var(--exp)}
+  .excard .top{display:flex;align-items:center;gap:12px}
+  .excard h4{margin:0;font-size:16px}
+  .excard .role{color:var(--muted);font-size:12px}
+  .ratepill{margin-top:14px;display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--muted)}
+  .ratebar{height:7px;border-radius:99px;background:var(--panel-2);overflow:hidden;margin-top:5px}
+  .ratebar > i{display:block;height:100%;border-radius:99px}
+
+  /* ---------- Expert dashboard ---------- */
+  .hello{font-size:24px;margin:0}
+  .dash{display:grid;grid-template-columns:1.7fr 1fr;gap:18px;align-items:start}
+  .panel-head{display:flex;align-items:center;gap:10px;margin:0 0 12px}
+  .panel-head h3{margin:0;font-size:16px}
+  .panel-head .desc{color:var(--muted);font-size:12px}
+  .pcard{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:16px;display:flex;flex-direction:column;gap:9px}
+  .pcard:hover{border-color:rgba(232,177,58,.5)}
+  .pcard .ptop{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+  .pcard h4{margin:0;font-size:16px}
+  .psub{color:var(--muted);font-size:12.5px}
+  .pupdate{font-size:13px;background:var(--panel-2);border-radius:8px;padding:9px 11px;border-left:3px solid var(--exp)}
+  .pupdate .t{color:var(--muted);font-size:11px;margin-top:4px}
+  .pfoot{display:flex;gap:8px;margin-top:4px}
+  .feedcard{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:16px}
+  .card .v small{font-size:13px;color:var(--muted);font-weight:600}
+  @media (max-width:980px){ .dash{grid-template-columns:1fr} }
+
+  /* ---------- Modal ---------- */
+  .overlay{position:fixed;inset:0;background:rgba(5,7,12,.66);backdrop-filter:blur(3px);display:grid;place-items:center;padding:24px;z-index:50}
+  .modal{width:100%;max-width:680px;max-height:88vh;overflow:auto;background:var(--panel);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow)}
+  .modal.lg{max-width:860px}
+  .modal-head{display:flex;align-items:center;gap:12px;padding:18px 22px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--panel);z-index:2}
+  .modal-head h3{margin:0;font-size:18px}
+  .modal-body{padding:20px 22px}
+  .modal-foot{padding:16px 22px;border-top:1px solid var(--line);display:flex;gap:10px;justify-content:flex-end;position:sticky;bottom:0;background:var(--panel)}
+  .x{margin-left:auto;font-size:22px;color:var(--muted);line-height:1}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px 16px}
+  .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px 16px}
+  .ro{background:var(--panel-2);border:1px dashed var(--line);border-radius:10px;padding:10px 12px}
+  .ro .k{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px}
+  .ro .v{font-weight:600;margin-top:2px}
+  .section-title{font-size:12px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin:18px 0 8px;font-weight:700}
+  .note{font-size:12px;color:var(--muted-2);margin-top:6px}
+
+  /* review sliders */
+  .rev-row{display:grid;grid-template-columns:1fr 60px;gap:12px;align-items:center;margin:12px 0}
+  .rev-row input[type=range]{width:100%}
+  .rev-val{text-align:center;font-weight:800;font-size:18px;background:var(--panel-2);border:1px solid var(--line);border-radius:8px;padding:4px}
+  .rev-total{display:flex;align-items:center;justify-content:space-between;margin-top:16px;padding:14px;border-radius:12px;background:var(--panel-2);border:1px solid var(--line)}
+  .rev-total .big{font-size:26px;font-weight:800}
+
+  /* report */
+  .report-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .rep{background:var(--panel-2);border:1px solid var(--line);border-radius:12px;padding:14px}
+  .rep .k{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px}
+  .rep .v{font-size:21px;font-weight:800;margin-top:4px}
+  .rep .v small{font-size:13px;color:var(--muted);font-weight:600}
+  .rep.good .v{color:#9be8c0} .rep.bad .v{color:#ffb3bd}
+  .rep.hero{grid-column:1/-1;background:linear-gradient(120deg,rgba(232,177,58,.12),rgba(224,86,106,.10))}
+
+  .updates{margin-top:6px}
+  .update{padding:10px 12px;border-left:3px solid var(--exp);background:var(--panel-2);border-radius:0 8px 8px 0;margin-bottom:8px}
+  .update .t{font-size:11px;color:var(--muted)}
+  .toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:var(--panel);border:1px solid var(--line);
+    padding:12px 18px;border-radius:12px;box-shadow:var(--shadow);z-index:80;font-weight:600;display:flex;gap:10px;align-items:center}
+  .toast.ok{border-color:rgba(63,191,127,.5)}
+  .foot{padding:14px 26px;color:var(--muted-2);font-size:12px;border-top:1px solid var(--line);display:flex;gap:16px;flex-wrap:wrap}
+  .foot a{cursor:pointer;text-decoration:underline}
+  .req::after{content:" *";color:var(--bad)}
+  @media (max-width:880px){
+    .shell{grid-template-columns:1fr}
+    .channels,.grid2,.grid3,.report-grid{grid-template-columns:1fr}
+    .side{border-right:none;border-bottom:1px solid var(--line);display:flex;gap:6px;overflow-x:auto;padding:10px;align-items:center}
+    .side .who{display:none}
+    .navitem{width:auto;white-space:nowrap;margin-bottom:0;flex:0 0 auto}
+    .navitem .navcount{margin-left:6px}
+    .main{padding:18px}
+  }
+
+  /* ===================== PREMIUM THEME OVERRIDES ===================== */
+  :root{
+    --bg:#090b10;
+    --panel:#13161d; --panel-2:#191d26; --panel-3:#212632;
+    --line:rgba(255,255,255,.085); --line-2:rgba(255,255,255,.05);
+    --text:#eef0f6; --muted:#99a2b5; --muted-2:#6b7486;
+    --sup:#ff5d73; --sup-deep:#e0566a;
+    --exp:#f1c14b; --exp-deep:#e3a92f;
+    --ok:#46cd8b; --warn:#f1c14b; --bad:#ff5d73; --info:#6aa6e6;
+    --radius:16px; --radius-lg:20px;
+    --shadow:0 18px 50px -18px rgba(0,0,0,.7);
+    --shadow-sm:0 8px 24px -10px rgba(0,0,0,.55);
+    --ring:0 0 0 3px rgba(106,166,230,.28);
+    --grad-sup:linear-gradient(135deg,#ff6f83,#e0566a);
+    --grad-exp:linear-gradient(135deg,#f6d268,#e3a92f);
+    --grad-brand:linear-gradient(120deg,#ff5d73,#f1c14b);
+    --hairline:inset 0 1px 0 rgba(255,255,255,.06);
+  }
+  html{scroll-behavior:smooth}
+  body{
+    font-family:'Inter',-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:
+      radial-gradient(900px 520px at 88% -8%, rgba(255,93,115,.13), transparent 60%),
+      radial-gradient(820px 520px at 0% 0%, rgba(241,193,75,.09), transparent 55%),
+      radial-gradient(1000px 720px at 50% 120%, rgba(106,166,230,.07), transparent 60%),
+      #090b10;
+    background-attachment:fixed;
+  }
+  ::selection{background:rgba(255,93,115,.3)}
+  *::-webkit-scrollbar{width:10px;height:10px}
+  *::-webkit-scrollbar-thumb{background:rgba(255,255,255,.12);border-radius:99px;border:2px solid transparent;background-clip:padding-box}
+  *::-webkit-scrollbar-thumb:hover{background:rgba(255,255,255,.22);background-clip:padding-box}
+  *::-webkit-scrollbar-track{background:transparent}
+
+  .brand h1,.hello,.landing h2,.channel h3,.page-head h2{font-family:'Space Grotesk','Inter',sans-serif;letter-spacing:-.02em}
+
+  .brandbar{position:sticky;top:0;z-index:30;padding:15px 26px;border-bottom:1px solid var(--line);
+    background:rgba(11,13,18,.72);backdrop-filter:blur(16px) saturate(140%);-webkit-backdrop-filter:blur(16px) saturate(140%)}
+  .logo{border-radius:13px;box-shadow:0 0 0 1px rgba(255,255,255,.08),0 10px 26px -8px rgba(255,93,115,.55)}
+  .pill{background:rgba(255,255,255,.04);border-color:var(--line);backdrop-filter:blur(6px)}
+
+  .btn{border-radius:12px;border:1px solid var(--line);background:rgba(255,255,255,.05);
+    transition:transform .12s ease, box-shadow .2s ease, filter .2s ease, background .2s ease;box-shadow:var(--hairline)}
+  .btn:hover{background:rgba(255,255,255,.09);transform:translateY(-1px)}
+  .btn:active{transform:translateY(0)}
+  .btn-ghost{background:transparent;box-shadow:none}
+  .btn-ghost:hover{background:rgba(255,255,255,.06)}
+  .btn-sup{background:var(--grad-sup);color:#2c0d12;border-color:transparent;box-shadow:0 10px 24px -10px rgba(255,93,115,.65),var(--hairline)}
+  .btn-sup:hover{box-shadow:0 14px 30px -10px rgba(255,93,115,.8),var(--hairline);filter:brightness(1.04)}
+  .btn-exp{background:var(--grad-exp);color:#2a1f06;border-color:transparent;box-shadow:0 10px 24px -10px rgba(241,193,75,.6),var(--hairline)}
+  .btn-exp:hover{box-shadow:0 14px 30px -10px rgba(241,193,75,.75),var(--hairline);filter:brightness(1.04)}
+
+  .field{background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:12px;padding:12px 14px;transition:border .15s, box-shadow .15s, background .15s}
+  .field:focus{border-color:var(--info);box-shadow:var(--ring);background:rgba(255,255,255,.06)}
+  select.field option{background:#13161d;color:var(--text)}
+
+  .card,.pcard,.feedcard,.tablewrap,.excard{
+    background:linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.012)), var(--panel);
+    border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow-sm),var(--hairline)}
+  .card{padding:18px}
+  .card .k{color:var(--muted);font-weight:600;font-size:11.5px;letter-spacing:.6px}
+  .card .v{font-size:28px;letter-spacing:-.02em;background:linear-gradient(180deg,#ffffff,#c2c8d8);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .card .v small{-webkit-text-fill-color:var(--muted);color:var(--muted)}
+  .card:hover,.feedcard:hover{border-color:rgba(255,255,255,.14)}
+
+  .card.kpi{position:relative;overflow:hidden}
+  .kpi .ic{width:36px;height:36px;border-radius:11px;display:grid;place-items:center;font-size:17px;margin-bottom:12px;box-shadow:var(--hairline)}
+  .kpi .v{font-size:32px}
+  .kpi.k-active .ic{background:rgba(106,166,230,.16);color:#a9cdf0}
+  .kpi.k-done .ic{background:rgba(70,205,139,.16);color:#9be8c0}
+  .kpi.k-lost .ic{background:rgba(255,93,115,.16);color:#ffb3bd}
+  .kpi.k-rate .ic{background:rgba(241,193,75,.16);color:#ffe1a0}
+  .kpi::after{content:'';position:absolute;right:-34px;top:-34px;width:130px;height:130px;border-radius:50%;filter:blur(44px);opacity:.13;pointer-events:none}
+  .kpi.k-active::after{background:#6aa6e6}.kpi.k-done::after{background:#46cd8b}.kpi.k-lost::after{background:#ff5d73}.kpi.k-rate::after{background:#f1c14b}
+
+  .pcard{transition:transform .15s ease, box-shadow .2s ease, border-color .2s ease}
+  .pcard:hover{transform:translateY(-2px);box-shadow:var(--shadow),var(--hairline)}
+  .excard:hover{box-shadow:var(--shadow),var(--hairline)}
+
+  .side{background:linear-gradient(180deg, rgba(255,255,255,.025), transparent), var(--panel)}
+  .side .who{background:linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.015));border-color:var(--line);border-radius:14px}
+  .navitem{border-radius:11px;transition:background .15s, color .15s}
+  .side.sup .navitem.active{background:linear-gradient(90deg, rgba(255,93,115,.2), rgba(255,93,115,.04));color:#ffd2d9;box-shadow:inset 0 0 0 1px rgba(255,93,115,.18)}
+  .side.exp .navitem.active{background:linear-gradient(90deg, rgba(241,193,75,.2), rgba(241,193,75,.04));color:#ffe9b0;box-shadow:inset 0 0 0 1px rgba(241,193,75,.2)}
+  .navcount{background:rgba(255,255,255,.06);border-color:var(--line)}
+
+  .badge{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border:1px solid rgba(255,255,255,.06)}
+  .badge::before{content:'';width:6px;height:6px;border-radius:50%;background:currentColor;box-shadow:0 0 8px currentColor;opacity:.95}
+
+  th{background:#141821;border-bottom:1px solid var(--line)}
+  th,td{border-bottom:1px solid var(--line-2)}
+  tbody tr{transition:background .12s}
+  tbody tr:hover{background:rgba(255,255,255,.035)}
+  .expert-cell{text-underline-offset:3px}
+
+  .channel{border-radius:var(--radius-lg);padding:36px 28px;box-shadow:var(--shadow-sm),var(--hairline);transition:transform .18s ease, box-shadow .25s ease, border-color .25s}
+  .ch-sup:hover{box-shadow:0 26px 60px -22px rgba(255,93,115,.5),var(--hairline);border-color:rgba(255,93,115,.6)}
+  .ch-exp:hover{box-shadow:0 26px 60px -22px rgba(241,193,75,.45),var(--hairline);border-color:rgba(241,193,75,.6)}
+  .ch-sup .go{background:var(--grad-sup);color:#2c0d12;box-shadow:0 10px 24px -10px rgba(255,93,115,.6)}
+  .ch-exp .go{background:var(--grad-exp);color:#2a1f06;box-shadow:0 10px 24px -10px rgba(241,193,75,.55)}
+  .channel .glow{opacity:.32;filter:blur(70px)}
+  .landing h2{font-size:34px}
+
+  .auth{border-radius:var(--radius-lg);box-shadow:var(--shadow),var(--hairline);
+    background:linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.01)), var(--panel)}
+
+  .overlay{background:rgba(6,8,12,.7);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+  .modal{border-radius:var(--radius-lg);box-shadow:var(--shadow);
+    background:linear-gradient(180deg, rgba(255,255,255,.035), rgba(255,255,255,.008)), var(--panel)}
+  .modal-head{background:rgba(19,22,29,.85);border-bottom:1px solid var(--line);backdrop-filter:blur(10px)}
+  .modal-foot{background:rgba(19,22,29,.85);border-top:1px solid var(--line);backdrop-filter:blur(10px)}
+
+  .update{border-radius:10px;border-left:3px solid var(--exp);background:rgba(255,255,255,.03)}
+  .pupdate{background:rgba(255,255,255,.04);border-radius:10px}
+  .ro{background:rgba(255,255,255,.03);border:1px solid var(--line);border-radius:12px}
+  .rev-val,.rev-total,.rep{border-radius:12px;background:rgba(255,255,255,.03);border:1px solid var(--line)}
+  .rep.hero{background:linear-gradient(120deg,rgba(241,193,75,.14),rgba(255,93,115,.10))}
+
+  /* line items + waterfall (formulation / closing sheets) */
+  .linerow{display:grid;grid-template-columns:1fr 130px 34px;gap:8px;margin-bottom:8px;align-items:center}
+  .linerow.est{grid-template-columns:1fr 64px 116px 110px 34px}
+  .linerow .amt{font-variant-numeric:tabular-nums;color:var(--muted);text-align:right;font-weight:600;font-size:13px}
+  .linerow .field{padding:9px 11px}
+  .linerow [data-int-del],.linerow [data-est-del],.linerow [data-act-del]{color:var(--bad);padding:6px}
+  .wfbox{background:rgba(255,255,255,.03);border:1px solid var(--line);border-radius:12px;padding:4px 14px;margin-top:8px}
+  .wfrow{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:9px 0;border-bottom:1px solid var(--line-2);font-size:13.5px}
+  .wfrow:last-child{border-bottom:none}
+  .wfrow small{color:var(--muted-2);font-weight:400}
+  .wfrow b{font-variant-numeric:tabular-nums;white-space:nowrap}
+  .wfrow.strong{font-size:15px;font-weight:700}
+  .wfrow.strong b{color:var(--exp)}
+  .addrow{margin:2px 0 6px}
+
+  /* edit links / versions */
+  .verrow{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:rgba(255,255,255,.03);margin-bottom:8px}
+  .verrow a{text-decoration:none}
+  .veradd{display:grid;grid-template-columns:170px 1fr auto auto;gap:8px;align-items:center}
+  .verfin{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);margin:0;white-space:nowrap}
+  @media (max-width:700px){ .veradd{grid-template-columns:1fr} }
+
+  .toast{border-radius:14px;background:rgba(19,22,29,.92);backdrop-filter:blur(10px);box-shadow:var(--shadow)}
+  .hello{font-size:27px}
+  .page-head h2{font-size:23px}
+</style>
+</head>
+<body>
+<div class="brandbar">
+  <div class="logo">S</div>
+  <div class="brand">
+    <h1>Sugar Shot <span style="color:var(--muted);font-weight:500">· Work Tracker</span></h1>
+    <p>2‑Channel work status system · Supervisors &amp; Experts</p>
+  </div>
+  <div class="spacer"></div>
+  <span class="pill" id="sessionPill">Private platform · Sugar Shot Team only</span>
+  <button class="btn btn-sm btn-ghost" id="bellBtn" style="display:none">🔔 <span id="bellCount">0</span></button>
+  <button class="btn btn-sm btn-ghost" id="logoutBtn" style="display:none">Log out</button>
+</div>
+
+<div id="root"></div>
+
+<div class="foot">
+  <span>Sugar Shot Work Tracker — prototype</span>
+  <a id="aboutLink">About / how this maps to the spec</a>
+  <a id="resetLink">Reset demo data</a>
+</div>
+
+<div id="modalRoot"></div>
+<div id="toastRoot"></div>
+
+<script>
+/* =========================================================================
+   Sugar Shot Work Tracker — single-file prototype
+   Storage: localStorage. No backend required.
+   Security note: passwords use a lightweight browser hash for demo only —
+   NOT production-grade. See About panel for the path to a real deployment.
+   ========================================================================= */
+
+const KEY = 'sugarshot_db_v6';
+const DAY = 86400000;
+const now = () => Date.now();
+const uid = () => Math.random().toString(36).slice(2,9);
+
+/* ---- tiny non-secure hash (demo only) ---- */
+function hash(s){let h=5381;for(let i=0;i<s.length;i++){h=((h<<5)+h)+s.charCodeAt(i);h|=0;}return 'h'+(h>>>0).toString(16);}
+
+/* ---- formatting ---- */
+const INR = n => (n||n===0) ? '₹'+Number(n).toLocaleString('en-IN') : '—';
+const PCT = n => (n||n===0) ? (Math.round(n*10)/10)+'%' : '—';
+const fdate = d => d ? new Date(d).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}) : '—';
+const daysSince = d => Math.floor((now()-d)/DAY);
+const esc = s => (s==null?'':String(s)).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const normUrl = u => { u=(u||'').trim(); if(!u) return '#'; return /^[a-z][a-z0-9+.-]*:\/\//i.test(u)?u:('https://'+u); };
+
+/* =========================== SEED DATA =========================== */
+function seed(){
+  const t = now();
+  const supervisors = [
+    {id:'s1', name:'Aasish Suresh', email:'contact@sugarshotfilms.com', phone:'+91 90000 11111',
+     pass:hash('sugarshot'), passSet: t - 12*DAY},
+    {id:'s2', name:'Riya Menon', email:'riya@sugarshotfilms.com', phone:'+91 90000 22222',
+     pass:hash('riya123'), passSet: t - 80*DAY},   // ~80 days -> within 15‑day reminder window
+  ];
+  const experts = [
+    {id:'e1', name:'Karan Patel', role:'Director of Photography', email:'karan@freelance.com', phone:'+91 98111 00001', pass:hash('expert')},
+    {id:'e2', name:'Neha Iyer', role:'Editor / Colorist', email:'neha@freelance.com', phone:'+91 98111 00002', pass:hash('expert')},
+    {id:'e3', name:'Arjun Rao', role:'3D / VFX Artist', email:'arjun@freelance.com', phone:'+91 98111 00003', pass:hash('expert')},
+  ];
+  const mk = o => Object.assign({
+    id:uid(), supervisorInCharge:'', projectName:'', projectType:'', expertInCharge:'', expertRole:'',
+    status:'Active', estimate:null, dateEstimateShared:null, totalCostAfterTDS:null, internalCost:null,
+    externalCost:null, finalClosingCost:null, closingSheetLink:'', finalGrossProfit:null, finalNetProfit:null,
+    updates:[], versions:[], formulationId:null, closingId:null, review:null, createdAt:t
+  }, o);
+
+  const projects = [
+    mk({supervisorInCharge:'Aasish Suresh', projectName:'Tanishq Festive TVC', projectType:'TV Commercial',
+        expertInCharge:'Karan Patel', expertRole:'Director of Photography', status:'Active',
+        estimate:1800000, dateEstimateShared:t-30*DAY, totalCostAfterTDS:1620000, internalCost:300000,
+        externalCost:900000, finalClosingCost:null, finalGrossProfit:null, finalNetProfit:null,
+        updates:[{t:t-9*DAY,text:'Pre‑production locked, location recce done in Jaipur.'},{t:t-2*DAY,text:'Shoot day 1 wrapped — 80% coverage.'}],
+        versions:[{id:uid(),label:'V1 — rough cut',url:'https://drive.google.com/file/d/tanishq-v1/view',final:false,t:t-7*DAY},
+                  {id:uid(),label:'V2 — with VO + music',url:'https://frame.io/tanishq-v2',final:false,t:t-1*DAY}]}),
+    mk({supervisorInCharge:'Aasish Suresh', projectName:'Swiggy Monsoon Reel Pack', projectType:'Social Media',
+        expertInCharge:'Neha Iyer', expertRole:'Editor / Colorist', status:'Completed',
+        estimate:450000, dateEstimateShared:t-70*DAY, totalCostAfterTDS:405000, internalCost:90000,
+        externalCost:120000, finalClosingCost:135000, closingSheetLink:'', finalGrossProfit:285000, finalNetProfit:180000,
+        updates:[{t:t-40*DAY,text:'Delivered 12 reels, all approved by client.'}],
+        review:{creativity:9,timeline:8,thinking:9,closure:9,total:35}}),
+    mk({supervisorInCharge:'Riya Menon', projectName:'CRED Diwali Film', projectType:'Branded Film',
+        expertInCharge:'Arjun Rao', expertRole:'3D / VFX Artist', status:'Completed',
+        estimate:2600000, dateEstimateShared:t-90*DAY,
+        // financials NOT fully filled -> stays in Active bucket as "Awaiting financials"
+        totalCostAfterTDS:null, internalCost:null, externalCost:null, finalClosingCost:null,
+        updates:[{t:t-20*DAY,text:'Final render delivered. Awaiting supervisor cost closure.'}]}),
+    mk({supervisorInCharge:'Riya Menon', projectName:'Zomato Pitch Concept', projectType:'Pitch / Concept',
+        expertInCharge:'Karan Patel', expertRole:'Creative Director', status:'Lost',
+        estimate:1200000, dateEstimateShared:t-60*DAY, totalCostAfterTDS:0, internalCost:60000,
+        externalCost:0, finalClosingCost:0, finalGrossProfit:0, finalNetProfit:-60000,
+        updates:[{t:t-55*DAY,text:'Pitch not selected — client went in‑house.'}],
+        review:{creativity:7,timeline:6,thinking:5,closure:2,total:20}}),
+    mk({supervisorInCharge:'Aasish Suresh', projectName:'boAt Earbuds Launch Film', projectType:'Branded Film',
+        expertInCharge:'Karan Patel', expertRole:'Director of Photography', status:'Active',
+        estimate:950000, dateEstimateShared:t-12*DAY,
+        updates:[{t:t-6*DAY,text:'Mood board approved by client, casting shortlist sent.'},
+                 {t:t-2*DAY,text:'Studio locked for the 18th, gear & crew list finalized.'},
+                 {t:t-4*3600000,text:'Storyboard v2 uploaded for supervisor sign‑off.'}]}),
+    mk({supervisorInCharge:'Aasish Suresh', projectName:'Nykaa Beauty Campaign', projectType:'Social Media',
+        expertInCharge:'Karan Patel', expertRole:'Director of Photography', status:'Completed',
+        estimate:700000, dateEstimateShared:t-50*DAY, totalCostAfterTDS:630000, internalCost:120000,
+        externalCost:210000, finalClosingCost:330000, finalGrossProfit:420000, finalNetProfit:300000,
+        updates:[{t:t-44*DAY,text:'15 hero stills + 4 reels delivered — client signed off, all approved.'}],
+        versions:[{id:uid(),label:'V1',url:'https://frame.io/nykaa-v1',final:false,t:t-46*DAY},
+                  {id:uid(),label:'V2 — client notes',url:'https://frame.io/nykaa-v2',final:false,t:t-45*DAY},
+                  {id:uid(),label:'Final Edit',url:'https://drive.google.com/drive/nykaa-final',final:true,t:t-44*DAY}],
+        review:{creativity:9,timeline:9,thinking:8,closure:9,total:35}}),
+  ];
+
+  // Cost Formulation = the profit waterfall (ref sheet 1) + a Production Estimate (ref sheet 2)
+  const formulations = [
+    {id:'f1', title:'Swiggy Monsoon — Cost Formulation', afterTDSValue:400000, tdsPct:10, marginPct:30,
+     internalItems:[{desc:'Creative Director / Project Manager [Anirudh]',amount:10000},{desc:'Editing',amount:100000}],
+     estimateItems:[{desc:'Studio [MajikHouse — Equipment, Crew, Setup]',qty:1,rate:40000},
+                    {desc:'Food & Beverages',qty:1,rate:5000},
+                    {desc:'Host',qty:1,rate:18000},
+                    {desc:'Transportation',qty:1,rate:3000}],
+     productionFeePct:10, gstPct:18, notes:'Change “Project Value (After TDS)” and “Profit Margin %” to re-price.',
+     locked:true, assignedProjectId: projects[1].id, createdAt:t-40*DAY},
+    {id:'f2', title:'Untitled Brand Film — draft', afterTDSValue:0, tdsPct:10, marginPct:30,
+     internalItems:[], estimateItems:[], productionFeePct:10, gstPct:18, notes:'Awaiting brief confirmation.',
+     locked:false, assignedProjectId:null, createdAt:t-3*DAY},
+  ];
+  projects[1].formulationId = 'f1';
+
+  // Closing Sheet = actual external spend -> Money Saved / Total Profit / Actual Profit (ref sheet 1 bottom)
+  const closings = [
+    {id:'c1', title:'Swiggy Monsoon — Closing Sheet',
+     actualItems:[{desc:'Studio [MajikHouse]',amount:40000},{desc:'Food',amount:4000},
+                  {desc:'Host',amount:15000},{desc:'Travel',amount:2000}],
+     notes:'Came in under the external budget — efficient pipeline.',
+     locked:true, assignedProjectId: projects[1].id, createdAt:t-39*DAY},
+  ];
+  projects[1].closingId = 'c1';
+  projects[1].closingSheetLink = 'closing-sheet://c1';
+
+  return {supervisors, experts, projects, formulations, closings, notifications:[], session:null, v:6};
+}
+
+/* =========================== DB =========================== */
+let DB = load();
+function load(){ try{const r=localStorage.getItem(KEY); if(r){const d=JSON.parse(r); if(d.v===6) return d;}}catch(e){} const s=seed(); localStorage.setItem(KEY,JSON.stringify(s)); return s; }
+function save(){ localStorage.setItem(KEY, JSON.stringify(DB)); }
+function resetDemo(){ localStorage.removeItem(KEY); DB=load(); state={screen:'landing'}; render(); toast('Demo data reset'); }
+
+/* =========================== NOTIFICATIONS =========================== */
+function notify(toName, channel, message){
+  DB.notifications.unshift({id:uid(), to:toName, channel, message, at:now(), read:false});
+  save();
+}
+// Simulated email + WhatsApp delivery (no real send without backend)
+function notifyAll(toName, message){ notify(toName, 'Email + WhatsApp', message); }
+
+function checkPasswordPolicy(sup){
+  const age = daysSince(sup.passSet);
+  const left = 90 - age;
+  if(left<=15 && left>0){
+    const already = DB.notifications.some(n=>n.to===sup.name && n.message.includes('password') && daysSince(n.at)<1);
+    if(!already) notifyAll(sup.name, `Reminder: your supervisor password expires in ${left} day(s). Resetting every 90 days is mandatory.`);
+  }
+  return left; // <=0 means expired -> must reset
+}
+
+/* =========================== STATE =========================== */
+let state = { screen:'landing' };  // screens: landing, login-sup, login-exp, app-sup, app-exp
+const $ = id => document.getElementById(id);
+
+/* =========================== AUTH =========================== */
+function loginSupervisor(name, pass){
+  const sup = DB.supervisors.find(s=>s.name.toLowerCase()===name.trim().toLowerCase());
+  if(!sup) return {err:'No supervisor found with that name.'};
+  if(sup.pass!==hash(pass)) return {err:'Incorrect password.'};
+  return {ok:sup};
+}
+function loginExpert(name, pass){
+  const ex = DB.experts.find(e=>e.name.toLowerCase()===name.trim().toLowerCase());
+  if(!ex) return {err:'No expert found with that name.'};
+  if(ex.pass!==hash(pass)) return {err:'Incorrect password.'};
+  return {ok:ex};
+}
+
+/* =========================== HELPERS =========================== */
+function financialsComplete(p){
+  return [p.totalCostAfterTDS,p.internalCost,p.externalCost,p.finalClosingCost,p.finalGrossProfit,p.finalNetProfit]
+    .every(v=>v!==null && v!=='' && v!==undefined) && !!p.estimate && !!p.dateEstimateShared;
+}
+// Effective bucket honoring rule (e): Completed only when supervisor financials are filled.
+function bucketOf(p){
+  if(p.status==='Lost') return 'Lost';
+  if(p.status==='Completed' && financialsComplete(p)) return 'Completed';
+  return 'Active';
+}
+function awaitingFinancials(p){ return p.status==='Completed' && !financialsComplete(p); }
+const projectsForExpert = name => DB.projects.filter(p=>p.expertInCharge===name);
+const expertByName = name => DB.experts.find(e=>e.name===name);
+
+/* ===== Cost formulation + estimation maths (mirrors the reference Google Sheets) ===== */
+function num(v){ const n=Number(v); return isFinite(n)?n:0; }
+// Reference sheet 1 — profit waterfall  +  reference sheet 2 — production estimate
+function computeFormulation(f){
+  f=f||{};
+  const afterTDS   = num(f.afterTDSValue);                 // Project Value (After TDS) — "START HERE / CHANGE THIS VALUE ONLY"
+  const tds        = afterTDS * num(f.tdsPct)/100;         // TDS (PH fee) — added on top
+  const total      = afterTDS + tds;                       // Total Project Value (excl GST) — shared to client
+  const margin     = afterTDS * num(f.marginPct)/100;     // Profit Margin (30%)
+  const afterMargin= afterTDS - margin;                    // Project Value (After Profit Margin)
+  const internal   = (f.internalItems||[]).reduce((a,x)=>a+num(x.amount),0); // Internal Cost
+  const afterInternal = afterMargin - internal;            // Project Value (After Internal Cost) = External Budget
+  // Production estimate (planned external, shared to client)
+  const estTotal   = (f.estimateItems||[]).reduce((a,x)=>a+num(x.qty||1)*num(x.rate),0);
+  const prodFee    = estTotal * num(f.productionFeePct)/100;
+  const estSub     = estTotal + prodFee;
+  const cgst       = estSub * (num(f.gstPct)/2)/100;
+  const sgst       = estSub * (num(f.gstPct)/2)/100;
+  const estGrand   = estSub + cgst + sgst;
+  return {total,tds,afterTDS,margin,afterMargin,internal,afterInternal,externalBudget:afterInternal,
+          estTotal,prodFee,estSub,cgst,sgst,estGrand};
+}
+function computeClosing(c,f){
+  const cf = computeFormulation(f||{});
+  const spent       = (c.actualItems||[]).reduce((a,x)=>a+num(x.amount),0); // Total Amount Spent
+  const budget      = cf.externalBudget;
+  const moneySaved  = budget - spent;                       // Money Saved
+  const totalProfit = cf.margin + cf.internal + moneySaved; // Total Profit
+  const actualProfit= cf.margin + moneySaved;               // Actual Profit
+  return {spent,budget,moneySaved,totalProfit,actualProfit,cf};
+}
+function formulationOfProject(pid){ const p=DB.projects.find(x=>x.id===pid); return p&&p.formulationId?DB.formulations.find(f=>f.id===p.formulationId):null; }
+let editingForm=null, editingClose=null;   // in-progress drafts while a sheet modal is open
+
+/* =========================== RENDER ROOT =========================== */
+function render(){
+  const root=$('root');
+  $('logoutBtn').style.display = (state.screen==='app-sup'||state.screen==='app-exp')?'inline-flex':'none';
+  $('bellBtn').style.display   = (state.screen==='app-sup'||state.screen==='app-exp')?'inline-flex':'none';
+  const unread = DB.notifications.filter(n=>!n.read).length;
+  $('bellCount').textContent = unread;
+  if(state.screen==='landing') root.innerHTML = viewLanding();
+  else if(state.screen==='login-sup') root.innerHTML = viewLogin('sup');
+  else if(state.screen==='login-exp') root.innerHTML = viewLogin('exp');
+  else if(state.screen==='app-sup') root.innerHTML = viewSupApp();
+  else if(state.screen==='app-exp') root.innerHTML = viewExpApp();
+  wire();
+}
+
+/* =========================== LANDING =========================== */
+function viewLanding(){
+  return `<div class="wrap"><div class="landing"><div class="landing-inner">
+    <h2>Welcome to the Sugar Shot Work Tracker</h2>
+    <p class="sub">A single private platform for the Sugar Shot team. Choose your channel to continue.</p>
+    <div class="channels">
+      <div class="channel ch-sup" data-go="login-sup"><div class="glow"></div>
+        <div class="tag">Channel 1</div>
+        <h3>Supervisor</h3>
+        <p>Track every project's status &amp; numbers, review experts, and lock cost &amp; closing sheets.</p>
+        <span class="go">Enter Supervisor →</span>
+      </div>
+      <div class="channel ch-exp" data-go="login-exp"><div class="glow"></div>
+        <div class="tag">Channel 2</div>
+        <h3>Expert</h3>
+        <p>Update your projects, log timely progress, and keep supervisors in sync in real time.</p>
+        <span class="go">Enter Expert →</span>
+      </div>
+    </div>
+  </div></div></div>`;
+}
+
+/* =========================== LOGIN =========================== */
+function viewLogin(kind){
+  const sup = kind==='sup';
+  return `<div class="wrap">
+    <a class="backlink" data-go="landing">← Back to channel select</a>
+    <div class="auth ${sup?'sup':'exp'}">
+      <h3>${sup?'Supervisor':'Expert'} sign in</h3>
+      <p class="lead">${sup?'Linked to your company email &amp; phone for safety. Passwords reset every 90 days.':'Update the projects you are working on.'}</p>
+      <label class="req">${sup?'Supervisor name':'Expert name'}</label>
+      <input class="field" id="liName" placeholder="${sup?'e.g. Aasish Suresh':'e.g. Karan Patel'}" autocomplete="off"/>
+      <label class="req">${sup?'Unique supervisor password':'Password'}</label>
+      <input class="field" id="liPass" type="password" placeholder="••••••••"/>
+      <div class="err" id="liErr"></div>
+      <button class="btn ${sup?'btn-sup':'btn-exp'} btn-block" id="liBtn">Sign in</button>
+      <div class="hint">
+        <b>Demo logins</b><br/>
+        ${sup
+          ? 'Supervisor — <b>Aasish Suresh</b> / <b>sugarshot</b> · <b>Riya Menon</b> / <b>riya123</b> (password ~80 days old → reminder demo)'
+          : 'Expert — <b>Karan Patel</b>, <b>Neha Iyer</b> or <b>Arjun Rao</b> / <b>expert</b>'}
+      </div>
+    </div></div>`;
+}
+
+/* =========================== SUPERVISOR APP =========================== */
+function viewSupApp(){
+  const sup = DB.session.user;
+  const tab = state.tab || 'active';
+  const counts = {
+    active: DB.projects.filter(p=>bucketOf(p)==='Active').length,
+    completed: DB.projects.filter(p=>bucketOf(p)==='Completed').length,
+    lost: DB.projects.filter(p=>bucketOf(p)==='Lost').length,
+    experts: DB.experts.length,
+  };
+  const nav = [
+    ['active','📂','Active Projects',counts.active],
+    ['completed','✅','Completed Projects',counts.completed],
+    ['lost','❌','Lost Projects',counts.lost],
+    ['experts','⭐','Experts',counts.experts],
+    ['formulation','🧮','Project Formulation Sheet',null],
+    ['closing','📊','Project Closing Sheet',null],
+  ];
+  const navHtml = nav.map(n=>`<button class="navitem ${tab===n[0]?'active':''}" data-tab="${n[0]}">
+     <span class="ic">${n[1]}</span> ${n[2]} ${n[3]!=null?`<span class="navcount">${n[3]}</span>`:''}</button>`).join('');
+
+  return `<div class="shell">
+    <aside class="side sup">
+      <div class="who"><div class="role">Supervisor</div><div class="name">${esc(sup.name)}</div>
+        <div class="meta">${esc(sup.email)}</div></div>
+      ${navHtml}
+    </aside>
+    <main class="main">${supContent(tab)}</main>
+  </div>`;
+}
+
+function supContent(tab){
+  if(tab==='active'||tab==='completed'||tab==='lost') return supProjectsTab(tab);
+  if(tab==='experts') return state.selectedExpert ? supExpertDetail() : supExpertsList();
+  if(tab==='formulation') return supFormulationTab();
+  if(tab==='closing') return supClosingTab();
+}
+
+function policyBanner(){
+  const sup = DB.session.user;
+  const left = checkPasswordPolicy(sup);
+  if(left<=0) return `<div class="banner bad">🔒 Your password has expired (90‑day policy).
+     <button class="btn btn-sm btn-sup" id="forceReset">Reset password now</button></div>`;
+  if(left<=15) return `<div class="banner warn">⏰ Mandatory: your password expires in <b>${left} day(s)</b>. A reminder was sent to your email &amp; WhatsApp.
+     <button class="btn btn-sm btn-ghost" id="forceReset">Change now</button></div>`;
+  return '';
+}
+
+function supProjectsTab(bucket){
+  const title = {active:'Active Projects',completed:'Completed Projects',lost:'Lost Projects'}[bucket];
+  const list = DB.projects.filter(p=>bucketOf(p)===(bucket[0].toUpperCase()+bucket.slice(1)));
+  const q = (state.q||'').toLowerCase();
+  const rows = list.filter(p=>!q || p.projectName.toLowerCase().includes(q) || p.expertInCharge.toLowerCase().includes(q));
+
+  const head = `<div class="page-head"><h2>${title}</h2>
+     <span class="desc">${rows.length} project(s) · params 1–6 filled by the Expert · params 7–15 by you</span></div>`;
+
+  const summary = bucket==='active' ? `<div class="cards">
+     <div class="card"><div class="k">Active value (est.)</div><div class="v">${INR(list.reduce((a,p)=>a+(p.estimate||0),0))}</div></div>
+     <div class="card"><div class="k">Awaiting your financials</div><div class="v sm">${list.filter(awaitingFinancials).length} project(s)</div></div>
+     <div class="card"><div class="k">Experts engaged</div><div class="v sm">${new Set(list.map(p=>p.expertInCharge)).size}</div></div>
+   </div>`:'';
+
+  const table = rows.length ? `<div class="tablewrap"><table>
+    <thead><tr>
+      <th>1 · Supervisor</th><th>2 · Project</th><th>3 · Type</th><th>4 · Expert</th><th>5 · Role</th><th>6 · Status</th>
+      <th class="num">7 · Estimate</th><th>8 · Est. shared</th><th class="num">9 · Cost (a/TDS)</th>
+      <th class="num">10 · Internal</th><th class="num">11 · External</th><th class="num">12 · Closing</th>
+      <th>13 · Sheet</th><th class="num">14 · Gross</th><th class="num">15 · Net</th><th>Edits</th><th></th>
+    </tr></thead><tbody>
+    ${rows.map(p=>{
+      const aw = awaitingFinancials(p);
+      return `<tr>
+        <td class="supervisor-cell">${esc(p.supervisorInCharge)}</td>
+        <td><b>${esc(p.projectName)}</b></td>
+        <td>${esc(p.projectType)}</td>
+        <td class="expert-cell" data-expert="${esc(p.expertInCharge)}">${esc(p.expertInCharge)}</td>
+        <td>${esc(p.expertRole)}</td>
+        <td><span class="badge b-${bucketOf(p).toLowerCase()}">${bucketOf(p)}</span>${aw?' <span class="badge b-await">Awaiting financials</span>':''}</td>
+        <td class="num">${INR(p.estimate)}</td>
+        <td>${fdate(p.dateEstimateShared)}</td>
+        <td class="num">${INR(p.totalCostAfterTDS)}</td>
+        <td class="num">${INR(p.internalCost)}</td>
+        <td class="num">${INR(p.externalCost)}</td>
+        <td class="num">${INR(p.finalClosingCost)}</td>
+        <td>${p.closingId?'<span class="badge b-assigned">Linked</span>':(p.closingSheetLink?esc(p.closingSheetLink):'—')}</td>
+        <td class="num">${INR(p.finalGrossProfit)}</td>
+        <td class="num">${INR(p.finalNetProfit)}</td>
+        <td>${(p.versions&&p.versions.length)?`<button class="btn btn-sm btn-ghost" data-versions="${p.id}">🔗 ${p.versions.length}${p.versions.some(v=>v.final)?' ✓':''}</button>`:'—'}</td>
+        <td><button class="btn btn-sm btn-sup" data-editfin="${p.id}">Fill 7–15</button></td>
+      </tr>`;}).join('')}
+    </tbody></table></div>`
+    : `<div class="tablewrap"><div class="empty">No ${bucket} projects yet.${bucket==='completed'?' A project lands here only when the Expert marks it Completed <b>and</b> you fill parameters 7–15.':''}</div></div>`;
+
+  return policyBanner() + head + summary +
+    `<div class="toolbar"><input class="field search" id="searchBox" placeholder="Search project or expert…" value="${esc(state.q||'')}"/></div>` +
+    table;
+}
+
+/* ---------- Experts list (Tab 4) ---------- */
+function supExpertsList(){
+  const cards = DB.experts.map(e=>{
+    const ps = projectsForExpert(e.name);
+    const reviewed = ps.filter(p=>p.review);
+    const avg = reviewed.length ? Math.round(reviewed.reduce((a,p)=>a+p.review.total,0)/reviewed.length) : null;
+    const pctw = avg!=null ? (avg/40*100) : 0;
+    const col = avg==null?'var(--muted-2)':(avg<=20?'var(--bad)':avg<30?'var(--warn)':'var(--ok)');
+    return `<div class="excard" data-expert="${esc(e.name)}">
+      <div class="top"><div class="ava">${esc(e.name.split(' ').map(x=>x[0]).join('').slice(0,2))}</div>
+        <div><h4>${esc(e.name)}</h4><div class="role">${esc(e.role)}</div></div></div>
+      <div class="ratepill"><span>${ps.length} project(s) · ${reviewed.length} reviewed</span>
+        <span>${avg!=null?avg+'/40':'—'}</span></div>
+      <div class="ratebar"><i style="width:${pctw}%;background:${col}"></i></div>
+    </div>`;}).join('');
+  return policyBanner()+`<div class="page-head"><h2>Experts</h2>
+    <span class="desc">View any expert's dashboard (read‑only) and run a Project Review.</span></div>
+    <div class="exgrid">${cards}</div>`;
+}
+
+/* ---------- Expert detail (read-only) with golden Project Review ---------- */
+function supExpertDetail(){
+  const e = expertByName(state.selectedExpert);
+  const ps = projectsForExpert(e.name);
+  const rows = ps.map(p=>`<tr>
+      <td><b>${esc(p.projectName)}</b></td><td>${esc(p.projectType)}</td><td>${esc(p.expertRole)}</td>
+      <td><span class="badge b-${bucketOf(p).toLowerCase()}">${bucketOf(p)}</span></td>
+      <td>${p.updates.length?fdate(p.updates[p.updates.length-1].t):'—'}</td>
+      <td>${p.review?`<span class="badge ${p.review.total<=20?'b-lost':'b-completed'}">${p.review.total}/40</span>`:'<span class="badge b-unassigned">Not reviewed</span>'}</td>
+      <td>${(p.versions&&p.versions.length)?`<button class="btn btn-sm btn-ghost" data-versions="${p.id}">🔗 ${p.versions.length}${p.versions.some(v=>v.final)?' ✓':''}</button>`:'—'}</td>
+      <td style="display:flex;gap:6px">
+        <button class="btn btn-sm btn-ghost" data-viewproj="${p.id}">View</button>
+        <button class="btn btn-sm btn-exp" data-review="${p.id}">★ Project Review</button>
+      </td>
+    </tr>`).join('');
+  return `<div class="page-head">
+      <button class="btn btn-sm btn-ghost" data-tab="experts" id="backExperts">← Experts</button>
+      <h2 style="margin-left:6px">${esc(e.name)}</h2>
+      <span class="desc">${esc(e.role)} · ${esc(e.email)} · read‑only view of their dashboard</span></div>
+    <div class="banner warn" style="background:rgba(232,177,58,.08)">👀 You are viewing this expert's dashboard. You can review projects but cannot edit their data.</div>
+    <div class="tablewrap"><table style="min-width:760px">
+      <thead><tr><th>Project</th><th>Type</th><th>Role</th><th>Status</th><th>Last update</th><th>Review</th><th>Edits</th><th></th></tr></thead>
+      <tbody>${rows||'<tr><td colspan="8" class="empty">No projects assigned.</td></tr>'}</tbody>
+    </table></div>`;
+}
+
+/* ---------- Tab 5: Formulation sheets ---------- */
+function supFormulationTab(){
+  const rows = DB.formulations.map(f=>{
+    const proj = f.assignedProjectId ? DB.projects.find(p=>p.id===f.assignedProjectId) : null;
+    const cf = computeFormulation(f);
+    return `<tr>
+      <td><b>${esc(f.title)}</b></td>
+      <td class="num">${INR(cf.total)}</td>
+      <td class="num">${PCT(num(f.marginPct))}</td>
+      <td class="num">${INR(cf.externalBudget)}</td>
+      <td>${f.locked?'<span class="badge b-locked">Locked</span>':'<span class="badge b-unassigned">Draft (unlocked)</span>'}</td>
+      <td>${f.locked? (proj?`<span class="badge b-assigned">${esc(proj.projectName)}</span>`:'<span class="badge b-unassigned">Unassigned</span>') : '<span class="badge b-unassigned">Unassigned</span>'}</td>
+      <td><button class="btn btn-sm btn-sup" data-editform="${f.id}">${f.locked?'View':'Edit / Lock'}</button></td>
+    </tr>`;}).join('');
+  return policyBanner()+`<div class="page-head"><h2>Project Formulation Sheet</h2>
+      <span class="desc">Profit waterfall + production estimate. Click “Formulation Locked” to assign it. Unlocked = Unassigned.</span></div>
+    <div class="toolbar"><button class="btn btn-sup" id="newForm">+ New Formulation Sheet</button></div>
+    <div class="tablewrap"><table style="min-width:760px"><thead><tr>
+      <th>Sheet</th><th class="num">Total value (excl GST)</th><th class="num">Margin %</th><th class="num">External budget</th><th>Lock</th><th>Assigned to</th><th></th>
+    </tr></thead><tbody>${rows||'<tr><td colspan="7" class="empty">No formulation sheets yet.</td></tr>'}</tbody></table></div>`;
+}
+
+/* ---------- Tab 6: Closing sheets ---------- */
+function supClosingTab(){
+  const rows = DB.closings.map(c=>{
+    const proj = c.assignedProjectId ? DB.projects.find(p=>p.id===c.assignedProjectId) : null;
+    const cc = computeClosing(c, formulationOfProject(c.assignedProjectId));
+    return `<tr>
+      <td><b>${esc(c.title)}</b></td>
+      <td class="num">${INR(cc.spent)}</td>
+      <td class="num" style="color:${cc.moneySaved<0?'var(--bad)':'var(--ok)'}">${INR(cc.moneySaved)}</td>
+      <td class="num">${INR(cc.actualProfit)}</td>
+      <td>${c.locked?'<span class="badge b-locked">Locked</span>':'<span class="badge b-unassigned">Draft (unlocked)</span>'}</td>
+      <td>${c.locked?(proj?`<span class="badge b-assigned">${esc(proj.projectName)}</span>`:'<span class="badge b-unassigned">Unassigned</span>'):'<span class="badge b-unassigned">Unassigned</span>'}</td>
+      <td style="display:flex;gap:6px">
+        <button class="btn btn-sm btn-sup" data-editclose="${c.id}">${c.locked?'View':'Edit / Lock'}</button>
+        ${c.locked&&proj?`<button class="btn btn-sm btn-exp" data-report="${c.id}">📊 Report</button>`:''}
+      </td>
+    </tr>`;}).join('');
+  return policyBanner()+`<div class="page-head"><h2>Project Closing Sheet</h2>
+      <span class="desc">Log actual spend after closure. “Closing Sheet Locked” assigns it and opens the business report.</span></div>
+    <div class="toolbar"><button class="btn btn-sup" id="newClose">+ New Closing Sheet</button></div>
+    <div class="tablewrap"><table style="min-width:780px"><thead><tr>
+      <th>Sheet</th><th class="num">Total spent</th><th class="num">Money saved</th><th class="num">Actual profit</th><th>Lock</th><th>Assigned to</th><th></th>
+    </tr></thead><tbody>${rows||'<tr><td colspan="7" class="empty">No closing sheets yet.</td></tr>'}</tbody></table></div>`;
+}
+
+/* =========================== EXPERT APP =========================== */
+function viewExpApp(){
+  const ex = DB.session.user;
+  const ps = projectsForExpert(ex.name);
+  const tab = state.tab || 'mine';
+  const counts = {
+    active: ps.filter(p=>bucketOf(p)==='Active').length,
+    completed: ps.filter(p=>bucketOf(p)==='Completed').length,
+    lost: ps.filter(p=>bucketOf(p)==='Lost').length,
+  };
+  return `<div class="shell">
+    <aside class="side exp">
+      <div class="who"><div class="role">Expert</div><div class="name">${esc(ex.name)}</div>
+        <div class="meta">${esc(ex.role)}</div></div>
+      <button class="navitem ${tab==='mine'?'active':''}" data-tab="mine"><span class="ic">📁</span> Dashboard <span class="navcount">${ps.length}</span></button>
+      <button class="navitem ${tab==='reviews'?'active':''}" data-tab="reviews"><span class="ic">★</span> My Reviews</button>
+    </aside>
+    <main class="main">${tab==='reviews'?expReviews():expProjects(ps,counts)}</main>
+  </div>`;
+}
+
+function expProjects(ps,counts){
+  const ex = DB.session.user;
+  const reviewed = ps.filter(p=>p.review);
+  const avg = reviewed.length ? Math.round(reviewed.reduce((a,p)=>a+p.review.total,0)/reviewed.length) : null;
+  const hr = new Date().getHours();
+  const greet = hr<12?'Good morning':hr<17?'Good afternoon':'Good evening';
+
+  const header = `<div class="page-head"><div>
+      <h2 class="hello">${greet}, ${esc(ex.name.split(' ')[0])} 👋</h2>
+      <span class="desc">${esc(ex.role)} · here's where your projects stand</span></div>
+      <button class="btn btn-exp" id="newProj" style="margin-left:auto">+ New Project</button></div>`;
+
+  const kpis = `<div class="cards">
+     <div class="card kpi k-active"><div class="ic">📂</div><div class="k">Active</div><div class="v">${counts.active}</div></div>
+     <div class="card kpi k-done"><div class="ic">✓</div><div class="k">Completed</div><div class="v">${counts.completed}</div></div>
+     <div class="card kpi k-lost"><div class="ic">✕</div><div class="k">Lost</div><div class="v">${counts.lost}</div></div>
+     <div class="card kpi k-rate"><div class="ic">★</div><div class="k">Avg rating</div><div class="v">${avg!=null?`${avg}<small>/40</small>`:'—'}</div></div>
+   </div>`;
+
+  // active projects first, then by most recent
+  const ord = {Active:0,Completed:1,Lost:2};
+  const sorted = ps.slice().sort((a,b)=> (ord[bucketOf(a)]-ord[bucketOf(b)]) || (b.createdAt-a.createdAt));
+  const pcards = sorted.map(p=>{
+    const last = p.updates.length ? p.updates[p.updates.length-1] : null;
+    return `<div class="pcard">
+      <div class="ptop"><div><h4>${esc(p.projectName)}</h4>
+        <div class="psub">${esc(p.projectType)} · for ${esc(p.supervisorInCharge)}</div></div>
+        <span class="badge b-${bucketOf(p).toLowerCase()}">${bucketOf(p)}</span></div>
+      <div class="psub">Your role: <b style="color:var(--exp)">${esc(p.expertRole)}</b>${p.review?` · Review <b>${p.review.total}/40</b>`:''}${(p.versions&&p.versions.length)?` · 🔗 ${p.versions.length} edit${p.versions.length>1?'s':''}`:''}</div>
+      ${last?`<div class="pupdate">${esc(last.text)}<div class="t">${fdate(last.t)}</div></div>`
+            :`<div class="psub">No updates yet — post your first one.</div>`}
+      ${awaitingFinancials(p)?'<span class="badge b-await">Marked done · awaiting supervisor financials</span>':''}
+      <div class="pfoot"><button class="btn btn-sm btn-exp" data-editmine="${p.id}">Open / Update</button></div>
+    </div>`;}).join('');
+  const projCol = `<div>
+     <div class="panel-head"><h3>My Projects</h3><span class="desc">you fill 1–6 &amp; post updates · supervisor fills the numbers</span></div>
+     <div class="exgrid">${pcards||'<div class="empty">No projects yet — add your first one.</div>'}</div></div>`;
+
+  // activity feed across all projects
+  let feed = [];
+  ps.forEach(p=>p.updates.forEach(u=>feed.push({proj:p.projectName,t:u.t,text:u.text})));
+  feed.sort((a,b)=>b.t-a.t); feed = feed.slice(0,8);
+  const feedHtml = feed.length
+     ? feed.map(f=>`<div class="update"><div><b>${esc(f.proj)}</b></div><div>${esc(f.text)}</div><div class="t">${fdate(f.t)} · ${new Date(f.t).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}</div></div>`).join('')
+     : '<div class="note">No recent activity yet.</div>';
+  const feedCol = `<div><div class="panel-head"><h3>Recent activity</h3></div>
+     <div class="feedcard">${feedHtml}</div></div>`;
+
+  return header + kpis + `<div class="dash">${projCol}${feedCol}</div>`;
+}
+
+function expReviews(){
+  const ex = DB.session.user;
+  const ps = projectsForExpert(ex.name).filter(p=>p.review);
+  const rows = ps.map(p=>`<tr><td><b>${esc(p.projectName)}</b></td>
+     <td>${p.review.creativity}</td><td>${p.review.timeline}</td><td>${p.review.thinking}</td><td>${p.review.closure}</td>
+     <td><span class="badge ${p.review.total<=20?'b-lost':'b-completed'}">${p.review.total}/40</span></td></tr>`).join('');
+  return `<div class="page-head"><h2>My Reviews</h2><span class="desc">Supervisor ratings on completed work.</span></div>
+    <div class="tablewrap"><table style="min-width:640px"><thead><tr>
+      <th>Project</th><th>Creativity</th><th>Timeline</th><th>Critical thinking</th><th>Closure rate</th><th>Total</th>
+    </tr></thead><tbody>${rows||'<tr><td colspan="6" class="empty">No reviews yet.</td></tr>'}</tbody></table></div>`;
+}
+
+/* =========================== MODALS =========================== */
+function openModal(html){ $('modalRoot').innerHTML = `<div class="overlay" id="overlay">${html}</div>`; wireModal(); }
+function closeModal(){ $('modalRoot').innerHTML=''; }
+
+/* ---- Supervisor: fill params 7–15 ---- */
+function modalFinancials(pid){
+  const p = DB.projects.find(x=>x.id===pid);
+  const link = p.closingId ? 'Linked closing sheet #'+p.closingId : (p.closingSheetLink||'');
+  return `<div class="modal lg"><div class="modal-head"><h3>${esc(p.projectName)} — Financials (7–15)</h3>
+      <button class="x" data-close>×</button></div>
+    <div class="modal-body">
+      <div class="section-title">Filled by the Expert (read‑only)</div>
+      <div class="grid3">
+        <div class="ro"><div class="k">1 · Supervisor</div><div class="v">${esc(p.supervisorInCharge)}</div></div>
+        <div class="ro"><div class="k">2 · Project</div><div class="v">${esc(p.projectName)}</div></div>
+        <div class="ro"><div class="k">3 · Type</div><div class="v">${esc(p.projectType)}</div></div>
+        <div class="ro"><div class="k">4 · Expert</div><div class="v">${esc(p.expertInCharge)}</div></div>
+        <div class="ro"><div class="k">5 · Role</div><div class="v">${esc(p.expertRole)}</div></div>
+        <div class="ro"><div class="k">6 · Status</div><div class="v">${esc(p.status)}</div></div>
+      </div>
+      <div class="section-title">Your inputs — required to close the project (Rule e)</div>
+      <div class="grid2">
+        <div><label class="req">7 · Project Estimate (₹)</label><input class="field" id="f_est" type="number" value="${p.estimate??''}"/></div>
+        <div><label class="req">8 · Date of Estimate Shared</label><input class="field" id="f_date" type="date" value="${p.dateEstimateShared?new Date(p.dateEstimateShared).toISOString().slice(0,10):''}"/></div>
+        <div><label class="req">9 · Total Project Cost (after TDS) (₹)</label><input class="field" id="f_total" type="number" value="${p.totalCostAfterTDS??''}"/></div>
+        <div><label class="req">10 · Internal Cost (₹)</label><input class="field" id="f_int" type="number" value="${p.internalCost??''}"/></div>
+        <div><label class="req">11 · External Cost (₹)</label><input class="field" id="f_ext" type="number" value="${p.externalCost??''}"/></div>
+        <div><label class="req">12 · Final Closing Cost (₹)</label><input class="field" id="f_close" type="number" value="${p.finalClosingCost??''}"/></div>
+        <div><label>13 · Final Closing Sheet (link)</label><input class="field" id="f_link" value="${esc(link)}" placeholder="paste link or assign in Tab 6"/></div>
+        <div><label class="req">14 · Final Gross Profit (₹)</label><input class="field" id="f_gross" type="number" value="${p.finalGrossProfit??''}"/></div>
+        <div><label class="req">15 · Final Net Profit (₹)</label><input class="field" id="f_net" type="number" value="${p.finalNetProfit??''}"/></div>
+      </div>
+      <div class="note">Auto‑suggest: Gross = (Cost after TDS − External) · Net = (Gross − Internal − Closing).
+        <button class="btn btn-sm btn-ghost" id="autoCalc">Auto‑fill 14 &amp; 15</button></div>
+      <p class="note">If 7–15 aren't all filled, the project stays <b>Active</b> even when marked Completed.</p>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" data-close>Cancel</button>
+      <button class="btn btn-sup" id="saveFin" data-pid="${pid}">Save financials</button>
+    </div></div>`;
+}
+
+/* ---- Expert: edit params 1–6 + updates + edit-version links  (view=true => supervisor read-only) ---- */
+function versionRowsHtml(p, ro){
+  return (p.versions||[]).slice().reverse().map(v=>`<div class="verrow">
+     <div style="min-width:0;flex:1">
+       <b>${esc(v.label)||'Link'}</b> ${v.final?'<span class="badge b-completed">Final</span>':''}
+       <a href="${esc(normUrl(v.url))}" target="_blank" rel="noopener noreferrer" style="display:block;color:var(--info);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(v.url)}</a>
+       <div class="t">${fdate(v.t)}</div>
+     </div>
+     <div style="display:flex;gap:6px;flex-shrink:0">
+       <a class="btn btn-sm btn-ghost" href="${esc(normUrl(v.url))}" target="_blank" rel="noopener noreferrer">Open ↗</a>
+       ${ro?'':`<button class="btn btn-sm btn-ghost" data-ver-final="${v.id}" data-pid="${p.id}">${v.final?'Unset':'Final'}</button>
+       <button class="x" data-ver-del="${v.id}" data-pid="${p.id}" title="remove">✕</button>`}
+     </div></div>`).join('') || '<div class="note">No edit links uploaded yet.</div>';
+}
+function modalEditMine(pid, view){
+  const isNew = !pid;
+  const ex = DB.session.user;
+  const p = isNew ? {id:null,supervisorInCharge:'',projectName:'',projectType:'',expertInCharge:ex.name,expertRole:ex.role,status:'Active',updates:[],versions:[]} : DB.projects.find(x=>x.id===pid);
+  const ro = !!view; const dis = ro?'disabled':'';
+  const supOpts = DB.supervisors.map(s=>`<option ${p.supervisorInCharge===s.name?'selected':''}>${esc(s.name)}</option>`).join('');
+  const statusOpts = ['Active','Completed','Lost'].map(s=>`<option ${p.status===s?'selected':''}>${s}</option>`).join('');
+  const updates = (p.updates||[]).slice().reverse().map(u=>`<div class="update"><div>${esc(u.text)}</div><div class="t">${fdate(u.t)} · ${new Date(u.t).toLocaleTimeString()}</div></div>`).join('') || '<div class="note">No updates yet.</div>';
+  return `<div class="modal lg"><div class="modal-head"><h3>${isNew?'New Project':esc(p.projectName)}</h3>
+      ${ro?'<span class="badge b-locked" style="margin-left:8px">View only</span>':''}<button class="x" data-close>×</button></div>
+    <div class="modal-body">
+      <div class="section-title">Parameters 1–6${ro?' (read‑only)':' (you fill these)'}</div>
+      <div class="grid2">
+        <div><label class="req">1 · Supervisor in charge</label><select class="field" id="m_sup" ${dis}>${supOpts}</select></div>
+        <div><label class="req">2 · Project name</label><input class="field" id="m_name" value="${esc(p.projectName)}" ${dis}/></div>
+        <div><label class="req">3 · Project type</label><input class="field" id="m_type" value="${esc(p.projectType)}" placeholder="TVC, Social, Branded Film…" ${dis}/></div>
+        <div><label>4 · Expert in charge</label><input class="field" id="m_exp" value="${esc(p.expertInCharge)}" readonly/></div>
+        <div><label class="req">5 · Expert role</label><input class="field" id="m_role" value="${esc(p.expertRole)}" ${dis}/></div>
+        <div><label class="req">6 · Project status</label><select class="field" id="m_status" ${dis}>${statusOpts}</select></div>
+      </div>
+      ${ro?'':'<p class="note">Marking <b>Completed</b> won\'t move it to the supervisor\'s Completed tab until they fill the financials.</p>'}
+      ${isNew?'':`<div class="section-title">Edit links &amp; versions</div>
+        <p class="note">${ro?'Cuts uploaded by the expert — open any version below.':'Add a link to each cut — V1, V2… and the final edit. Your supervisor can open these.'}</p>
+        ${ro?'':`<div class="veradd">
+          <input class="field" id="ver_label" placeholder="Label (V1, V2, Final…)"/>
+          <input class="field" id="ver_url" placeholder="Paste link (Drive / Frame.io / YouTube…)"/>
+          <label class="verfin"><input type="checkbox" id="ver_final"/> Final</label>
+          <button class="btn btn-exp" id="addVersion" data-pid="${pid}">+ Add link</button></div>`}
+        <div class="verlist" style="margin-top:10px">${versionRowsHtml(p,ro)}</div>
+        <div class="section-title">Timely updates${ro?'':' (visible to your supervisor)'}</div>
+        ${ro?'':`<div style="display:flex;gap:8px"><input class="field" id="m_update" placeholder="What progressed today?"/>
+          <button class="btn btn-exp" id="addUpdate" data-pid="${pid}">Post</button></div>`}
+        <div class="updates" style="margin-top:12px">${updates}</div>`}
+    </div>
+    <div class="modal-foot"><button class="btn btn-ghost" data-close>${ro?'Close':'Cancel'}</button>
+      ${ro?'':`<button class="btn btn-exp" id="saveMine" data-pid="${pid||''}">${isNew?'Create project':'Save 1–6'}</button>`}</div></div>`;
+}
+
+/* ---- Read-only versions popup (used from the supervisor project tables) ---- */
+function modalVersions(pid){
+  const p = DB.projects.find(x=>x.id===pid);
+  return `<div class="modal"><div class="modal-head"><h3>🔗 Edits &amp; versions — ${esc(p.projectName)}</h3><button class="x" data-close>×</button></div>
+    <div class="modal-body"><p class="note">Uploaded by ${esc(p.expertInCharge)||'the expert'}.</p>${versionRowsHtml(p,true)}</div>
+    <div class="modal-foot"><button class="btn btn-sup" data-close>Close</button></div></div>`;
+}
+
+/* ---- Supervisor: Project Review (golden) ---- */
+function modalReview(pid){
+  const p = DB.projects.find(x=>x.id===pid);
+  const r = p.review || {creativity:5,timeline:5,thinking:5,closure:5};
+  const row = (id,label,val)=>`<div class="rev-row"><div><label style="margin:0">${label}</label>
+      <input type="range" min="1" max="10" value="${val}" id="rv_${id}" data-rv></div>
+      <div class="rev-val" id="rvv_${id}">${val}</div></div>`;
+  const total = r.creativity+r.timeline+r.thinking+r.closure;
+  return `<div class="modal"><div class="modal-head" style="border-top:3px solid var(--exp)">
+      <h3>★ Project Review — ${esc(p.projectName)}</h3><button class="x" data-close>×</button></div>
+    <div class="modal-body">
+      <p class="note">Rate the expert 1–10 per parameter. Helps track whether they're a valuable asset for future projects.</p>
+      ${row('creativity','1 · Creativity',r.creativity)}
+      ${row('timeline','2 · Adherence to Timeline',r.timeline)}
+      ${row('thinking','3 · Project Brief Critical Thinking',r.thinking)}
+      ${row('closure','4 · Project Closure Rate',r.closure)}
+      <div class="rev-total"><div>5 · Total Rating</div><div class="big" id="rvTotal">${total}/40</div></div>
+      <p class="note" id="rvWarn" style="color:var(--bad);${total<=20?'':'display:none'}">⚠ Total ≤ 20/40 — a meeting alert will be sent to you via Email &amp; WhatsApp.</p>
+    </div>
+    <div class="modal-foot"><button class="btn btn-ghost" data-close>Cancel</button>
+      <button class="btn btn-exp" id="saveReview" data-pid="${pid}">Save review</button></div></div>`;
+}
+
+/* ---- Formulation sheet editor (profit waterfall + production estimate) ---- */
+function openFormulation(fid){
+  const src = fid ? DB.formulations.find(x=>x.id===fid) : null;
+  editingForm = src ? JSON.parse(JSON.stringify(src))
+    : {id:null,title:'',afterTDSValue:0,tdsPct:10,marginPct:30,internalItems:[{desc:'',amount:0}],
+       estimateItems:[{desc:'',qty:1,rate:0}],productionFeePct:10,gstPct:18,notes:'',locked:false,assignedProjectId:null};
+  openModal(modalFormulation());
+}
+function modalFormulation(){
+  const f = editingForm; const ro = f.locked; const cf = computeFormulation(f);
+  const projOpts = `<option value="">— choose project —</option>`+DB.projects.map(p=>`<option value="${p.id}" ${f.assignedProjectId===p.id?'selected':''}>${esc(p.projectName)}</option>`).join('');
+  const intRows = (f.internalItems||[]).map((it,i)=>`<div class="linerow">
+     <input class="field" data-int-desc="${i}" value="${esc(it.desc)}" placeholder="Resource / cost (e.g. Editing)" ${ro?'disabled':''}/>
+     <input class="field" data-int-amt="${i}" type="number" value="${it.amount}" placeholder="₹" ${ro?'disabled':''}/>
+     ${ro?'<span></span>':`<button class="x" data-int-del="${i}" title="remove">✕</button>`}</div>`).join('');
+  const estRows = (f.estimateItems||[]).map((it,i)=>`<div class="linerow est">
+     <input class="field" data-est-desc="${i}" value="${esc(it.desc)}" placeholder="Line item (Studio, Food…)" ${ro?'disabled':''}/>
+     <input class="field" data-est-qty="${i}" type="number" value="${it.qty}" placeholder="Qty" ${ro?'disabled':''}/>
+     <input class="field" data-est-rate="${i}" type="number" value="${it.rate}" placeholder="Rate ₹" ${ro?'disabled':''}/>
+     <span class="amt" id="estamt_${i}">${INR(num(it.qty||1)*num(it.rate))}</span>
+     ${ro?'<span></span>':`<button class="x" data-est-del="${i}" title="remove">✕</button>`}</div>`).join('');
+  return `<div class="modal lg"><div class="modal-head"><h3>${f.id?esc(f.title):'New Formulation Sheet'}</h3>
+      ${f.locked?'<span class="badge b-locked" style="margin-left:8px">Locked</span>':''}<button class="x" data-close>×</button></div>
+    <div class="modal-body">
+      <label class="req">Sheet title</label><input class="field" id="fm_title" value="${esc(f.title)}" ${ro?'disabled':''}/>
+
+      <div class="section-title">① Cost Formulation — profit waterfall</div>
+      <div class="grid3">
+        <div><label class="req">Project Value (After TDS) ₹ <small style="color:var(--exp)">START HERE</small></label><input class="field" id="fm_after" type="number" value="${f.afterTDSValue}" ${ro?'disabled':''}/></div>
+        <div><label>TDS %</label><input class="field" id="fm_tds" type="number" value="${f.tdsPct}" ${ro?'disabled':''}/></div>
+        <div><label>Profit Margin %</label><input class="field" id="fm_margin" type="number" value="${f.marginPct}" ${ro?'disabled':''}/></div>
+      </div>
+      <div class="wfbox">
+        <div class="wfrow"><span>TDS <small>(PH fee — added on top)</small></span><b id="cTds">${INR(cf.tds)}</b></div>
+        <div class="wfrow"><span>Total Project Value (excl GST) <small>shared to client</small></span><b id="cTotal">${INR(cf.total)}</b></div>
+        <div class="wfrow strong"><span>Project Value (After TDS) <small>base</small></span><b id="cAfterTDS">${INR(cf.afterTDS)}</b></div>
+        <div class="wfrow"><span>Profit Margin <small>(Sugar Shot)</small></span><b id="cMargin">${INR(cf.margin)}</b></div>
+        <div class="wfrow"><span>Project Value (After Profit Margin)</span><b id="cAfterMargin">${INR(cf.afterMargin)}</b></div>
+      </div>
+
+      <div class="section-title">Internal Cost <small style="text-transform:none;letter-spacing:0">— resources from within the company</small></div>
+      ${intRows}
+      ${ro?'':'<button class="btn btn-sm btn-ghost addrow" id="addInt">+ Add internal item</button>'}
+      <div class="wfbox">
+        <div class="wfrow"><span>Internal Cost (total)</span><b id="cInternal">${INR(cf.internal)}</b></div>
+        <div class="wfrow strong"><span>Project Value (After Internal Cost) <small>= EXTERNAL BUDGET</small></span><b id="cBudget">${INR(cf.externalBudget)}</b></div>
+      </div>
+
+      <div class="section-title">② Production Estimate — planned external (shared to client)</div>
+      <div class="linerow est" style="margin-bottom:4px;color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.4px">
+        <span>Item</span><span>Qty</span><span>Rate ₹</span><span style="text-align:right">Amount</span><span></span></div>
+      ${estRows}
+      ${ro?'':'<button class="btn btn-sm btn-ghost addrow" id="addEst">+ Add line item</button>'}
+      <div class="grid2" style="margin-top:6px">
+        <div><label>Production Fee %</label><input class="field" id="fm_fee" type="number" value="${f.productionFeePct}" ${ro?'disabled':''}/></div>
+        <div><label>GST % (CGST + SGST)</label><input class="field" id="fm_gst" type="number" value="${f.gstPct}" ${ro?'disabled':''}/></div>
+      </div>
+      <div class="wfbox">
+        <div class="wfrow"><span>Estimate Total</span><b id="cEstTotal">${INR(cf.estTotal)}</b></div>
+        <div class="wfrow"><span>Production Fee</span><b id="cFee">${INR(cf.prodFee)}</b></div>
+        <div class="wfrow"><span>Sub Total</span><b id="cSub">${INR(cf.estSub)}</b></div>
+        <div class="wfrow"><span>CGST</span><b id="cCgst">${INR(cf.cgst)}</b></div>
+        <div class="wfrow"><span>SGST</span><b id="cSgst">${INR(cf.sgst)}</b></div>
+        <div class="wfrow strong"><span>Grand Total <small>(incl GST)</small></span><b id="cGrand">${INR(cf.estGrand)}</b></div>
+      </div>
+      <p class="note" id="cCompare"></p>
+
+      <div class="section-title">Assign &amp; notes</div>
+      <div><label>Assign to project</label><select class="field" id="fm_proj" ${ro?'disabled':''}>${projOpts}</select></div>
+      <label style="margin-top:10px">Notes</label><textarea class="field" id="fm_notes" rows="2" ${ro?'disabled':''}>${esc(f.notes)}</textarea>
+      <p class="note">${f.locked?'Locked &amp; assigned — this sheet cannot be edited.':'Click “Formulation Locked” to assign to the selected project. Until then it stays <b>Unassigned</b>.'}</p>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" data-close>Close</button>
+      ${f.locked?'':`<button class="btn btn-ghost" id="saveFormDraft">Save draft</button>
+      <button class="btn btn-sup" id="lockForm">🔒 Formulation Locked</button>`}
+    </div></div>`;
+}
+
+/* ---- Closing sheet editor (actual spend -> money saved / profit) ---- */
+function openClosing(cid){
+  const src = cid ? DB.closings.find(x=>x.id===cid) : null;
+  editingClose = src ? JSON.parse(JSON.stringify(src))
+    : {id:null,title:'',actualItems:[{desc:'',amount:0}],notes:'',locked:false,assignedProjectId:null};
+  openModal(modalClosing());
+}
+function modalClosing(){
+  const c = editingClose; const ro = c.locked;
+  const lockable = DB.projects.filter(p=>p.status==='Completed' || p.status==='Lost');
+  const projOpts = `<option value="">— choose closed project —</option>`+lockable.map(p=>`<option value="${p.id}" ${c.assignedProjectId===p.id?'selected':''}>${esc(p.projectName)}${p.formulationId?'':' — no formulation'}</option>`).join('');
+  const actRows = (c.actualItems||[]).map((it,i)=>`<div class="linerow">
+     <input class="field" data-act-desc="${i}" value="${esc(it.desc)}" placeholder="Spent on (Studio, Food…)" ${ro?'disabled':''}/>
+     <input class="field" data-act-amt="${i}" type="number" value="${it.amount}" placeholder="₹" ${ro?'disabled':''}/>
+     ${ro?'<span></span>':`<button class="x" data-act-del="${i}" title="remove">✕</button>`}</div>`).join('');
+  const f = formulationOfProject(c.assignedProjectId);
+  const cc = computeClosing(c,f);
+  const outcome = !c.assignedProjectId
+    ? '<p class="note">Choose a closed project above to compute money saved &amp; profit.</p>'
+    : !f
+    ? '<p class="note" style="color:var(--warn)">⚠ This project has no <b>locked formulation</b> yet — assign one in the Formulation tab to calculate profit.</p>'
+    : `<div class="wfbox">
+        <div class="wfrow"><span>External Budget <small>(from formulation)</small></span><b id="oBudget">${INR(cc.budget)}</b></div>
+        <div class="wfrow"><span>Total Amount Spent</span><b id="oSpent">${INR(cc.spent)}</b></div>
+        <div class="wfrow strong"><span>Money Saved</span><b id="oSaved" style="color:${cc.moneySaved<0?'var(--bad)':'var(--ok)'}">${INR(cc.moneySaved)}</b></div>
+        <div class="wfrow"><span>Total Profit <small>(margin + internal + saved)</small></span><b id="oTotalP">${INR(cc.totalProfit)}</b></div>
+        <div class="wfrow strong"><span>Actual Profit <small>(margin + saved)</small></span><b id="oActualP" style="color:${cc.actualProfit<0?'var(--bad)':'var(--ok)'}">${INR(cc.actualProfit)}</b></div>
+      </div>`;
+  return `<div class="modal lg"><div class="modal-head"><h3>${c.id?esc(c.title):'New Closing Sheet'}</h3>
+      ${c.locked?'<span class="badge b-locked" style="margin-left:8px">Locked</span>':''}<button class="x" data-close>×</button></div>
+    <div class="modal-body">
+      <label class="req">Sheet title</label><input class="field" id="cl_title" value="${esc(c.title)}" ${ro?'disabled':''}/>
+      <div class="section-title">Assign to closed project</div>
+      <select class="field" id="cl_proj" ${ro?'disabled':''}>${projOpts}</select>
+
+      <div class="section-title">Actual external spend <small style="text-transform:none;letter-spacing:0">— what was really spent</small></div>
+      ${actRows}
+      ${ro?'':'<button class="btn btn-sm btn-ghost addrow" id="addAct">+ Add spend item</button>'}
+
+      <div class="section-title">Outcome — estimated vs actual</div>
+      ${outcome}
+
+      <label style="margin-top:12px">Notes</label><textarea class="field" id="cl_notes" rows="2" ${ro?'disabled':''}>${esc(c.notes)}</textarea>
+      <p class="note">${c.locked?'Locked &amp; assigned.':'Click “Closing Sheet Locked” to assign — the business report opens automatically.'}</p>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" data-close>Close</button>
+      ${c.locked?`<button class="btn btn-exp" id="showReportBtn" data-cid="${c.id}">📊 Show report</button>`:`<button class="btn btn-ghost" id="saveCloseDraft">Save draft</button>
+      <button class="btn btn-sup" id="lockClose">🔒 Closing Sheet Locked</button>`}
+    </div></div>`;
+}
+
+/* ---- Business report popup (built from the locked formulation + closing) ---- */
+function modalReport(cid){
+  const c = DB.closings.find(x=>x.id===cid);
+  const proj = DB.projects.find(p=>p.id===c.assignedProjectId);
+  const f = formulationOfProject(c.assignedProjectId);
+  const cf = computeFormulation(f||{});
+  const cc = computeClosing(c, f);
+  const actualMarginPct = cf.afterTDS ? (cc.actualProfit/cf.afterTDS*100) : 0;
+  const totalMarginPct = cf.afterTDS ? (cc.totalProfit/cf.afterTDS*100) : 0;
+  const rep=(k,v,cls='')=>`<div class="rep ${cls}"><div class="k">${k}</div><div class="v">${v}</div></div>`;
+  if(!f) return `<div class="modal"><div class="modal-head" style="border-top:3px solid var(--exp)"><h3>📊 Business Report</h3><button class="x" data-close>×</button></div>
+    <div class="modal-body"><p class="note" style="color:var(--warn)">This project has no locked <b>formulation sheet</b> assigned, so profit can't be computed. Lock a formulation for “${esc(proj?proj.projectName:'')}” first.</p></div>
+    <div class="modal-foot"><button class="btn btn-sup" data-close>Done</button></div></div>`;
+  return `<div class="modal lg"><div class="modal-head" style="border-top:3px solid var(--exp)">
+      <h3>📊 Business Report — ${esc(proj?proj.projectName:c.title)}</h3><button class="x" data-close>×</button></div>
+    <div class="modal-body">
+      <div class="report-grid">
+        ${rep('Actual Profit', `<b style="color:${cc.actualProfit<0?'var(--bad)':'var(--ok)'}">${INR(cc.actualProfit)} <small>(${PCT(actualMarginPct)})</small></b>`,'hero')}
+        ${rep('Total Project Value (excl GST)', INR(cf.total))}
+        ${rep('TDS deduction', INR(cf.tds))}
+        ${rep('Project Value (After TDS)', INR(cf.afterTDS))}
+        ${rep('Profit Margin', `${INR(cf.margin)} <small>(${PCT(num(f.marginPct))})</small>`)}
+        ${rep('Internal Cost', INR(cf.internal))}
+        ${rep('External Budget', INR(cf.externalBudget))}
+        ${rep('Total Amount Spent', INR(cc.spent), cc.spent>cf.externalBudget?'bad':'good')}
+        ${rep('Money Saved', INR(cc.moneySaved), cc.moneySaved<0?'bad':'good')}
+        ${rep('Total Profit', `${INR(cc.totalProfit)} <small>(${PCT(totalMarginPct)})</small>`, cc.totalProfit<0?'bad':'good')}
+        ${rep('Production Estimate (Grand Total incl GST)', INR(cf.estGrand))}
+      </div>
+      <p class="note">External budget was ${cc.moneySaved>=0?`under‑spent by ${INR(cc.moneySaved)} ✓`:`over‑spent by ${INR(-cc.moneySaved)} ⚠`}. Total Profit = Margin + Internal Cost + Money Saved; Actual Profit = Margin + Money Saved.</p>
+    </div>
+    <div class="modal-foot"><button class="btn btn-sup" data-close>Done</button></div></div>`;
+}
+
+/* ---- Password reset ---- */
+function modalReset(){
+  return `<div class="modal"><div class="modal-head"><h3>Change supervisor password</h3><button class="x" data-close>×</button></div>
+    <div class="modal-body">
+      <p class="note">Mandatory every 90 days. Linked to your company email &amp; WhatsApp for safety.</p>
+      <label class="req">New password</label><input class="field" id="np1" type="password"/>
+      <label class="req">Confirm new password</label><input class="field" id="np2" type="password"/>
+      <div class="err" id="npErr"></div>
+    </div>
+    <div class="modal-foot"><button class="btn btn-ghost" data-close>Later</button>
+      <button class="btn btn-sup" id="doReset">Update password</button></div></div>`;
+}
+
+/* ---- Notifications panel ---- */
+function modalNotifs(){
+  const list = DB.notifications;
+  const items = list.map(n=>`<div class="update" style="border-left-color:${n.message.includes('⚠')||n.message.includes('Rating')?'var(--bad)':'var(--exp)'}">
+      <div><b>${esc(n.to)}</b> · <span class="note" style="display:inline">${esc(n.channel)}</span></div>
+      <div>${esc(n.message)}</div><div class="t">${fdate(n.at)} · ${new Date(n.at).toLocaleTimeString()}</div></div>`).join('') || '<div class="empty">No notifications.</div>';
+  return `<div class="modal"><div class="modal-head"><h3>🔔 Notifications (Email + WhatsApp)</h3><button class="x" data-close>×</button></div>
+    <div class="modal-body"><p class="note">Simulated delivery. In production these go out via your email provider + WhatsApp Business API.</p>${items}</div>
+    <div class="modal-foot"><button class="btn btn-ghost" id="clearNotifs">Clear all</button>
+      <button class="btn btn-sup" data-close>Close</button></div></div>`;
+}
+
+/* ---- About ---- */
+function modalAbout(){
+  return `<div class="modal lg"><div class="modal-head"><h3>About this prototype</h3><button class="x" data-close>×</button></div>
+    <div class="modal-body" style="font-size:13.5px;line-height:1.65">
+      <p>This is a working, self‑contained prototype of the <b>Sugar Shot 2‑Channel Work Tracker</b>. Everything runs in your browser; data is saved locally (localStorage).</p>
+      <div class="section-title">What's implemented</div>
+      <ul>
+        <li>Two channels — <b>Supervisor</b> (light red) &amp; <b>Expert</b> (golden), private logins.</li>
+        <li>Supervisor: 6 tabs — Active / Completed / Lost (15 parameters), Experts, Formulation Sheet, Closing Sheet.</li>
+        <li>Params 1–6 filled by Experts; 7–15 by Supervisors. Projects can't reach “Completed” until 7–15 are filled (Rule e).</li>
+        <li>Click an Expert (param 4 or Experts tab) → read‑only dashboard + golden <b>Project Review</b> (1–10 each, /40). ≤20/40 triggers a meeting alert.</li>
+        <li>Formulation &amp; Closing sheets with “Locked” → assignment, “Unassigned” otherwise. Closing lock opens the <b>business report</b> popup.</li>
+        <li>90‑day password policy with a 15‑day reminder &amp; in‑app notification center (Email + WhatsApp simulated).</li>
+      </ul>
+      <div class="section-title">To make it a real multi‑user platform</div>
+      <ul>
+        <li><b>Backend + database</b> (e.g. Supabase / Firebase / Node + Postgres) so the team shares one synced source of truth.</li>
+        <li><b>Real auth</b> with hashed passwords + SSO to company email; enforce the 90‑day rotation server‑side.</li>
+        <li><b>Notifications</b> via an email provider (SendGrid/SES) + <b>WhatsApp Business API</b> (Twilio/Meta) on a daily scheduler.</li>
+        <li>Hosting on a private URL restricted to Sugar Shot accounts.</li>
+      </ul>
+      <p class="note">Tell me which backend you prefer and I'll build the deployable version next.</p>
+    </div>
+    <div class="modal-foot"><button class="btn btn-sup" data-close>Got it</button></div></div>`;
+}
+
+/* =========================== WIRING =========================== */
+function wire(){
+  document.querySelectorAll('[data-go]').forEach(el=>el.onclick=()=>{ state={screen:el.dataset.go}; render(); });
+
+  // login buttons
+  const liBtn=$('liBtn');
+  if(liBtn) liBtn.onclick=()=>{
+    const name=$('liName').value, pass=$('liPass').value;
+    const res = state.screen==='login-sup' ? loginSupervisor(name,pass) : loginExpert(name,pass);
+    if(res.err){ $('liErr').textContent=res.err; return; }
+    if(state.screen==='login-sup'){
+      DB.session={role:'sup',user:res.ok}; save();
+      const left=checkPasswordPolicy(res.ok); save();
+      state={screen:'app-sup',tab:'active'}; render();
+      if(left<=0) openModal(modalReset());
+    } else {
+      DB.session={role:'exp',user:res.ok}; save();
+      state={screen:'app-exp',tab:'mine'}; render();
+    }
+  };
+  $('liName')&&($('liName').onkeydown=e=>{if(e.key==='Enter')$('liPass').focus();});
+  $('liPass')&&($('liPass').onkeydown=e=>{if(e.key==='Enter')liBtn.click();});
+
+  // nav tabs
+  document.querySelectorAll('[data-tab]').forEach(el=>el.onclick=()=>{
+    state.tab=el.dataset.tab; state.selectedExpert=null; state.q=''; render();
+  });
+
+  // expert links (param 4 / experts list / cards)
+  document.querySelectorAll('[data-expert]').forEach(el=>el.onclick=()=>{
+    state.tab='experts'; state.selectedExpert=el.dataset.expert; render();
+  });
+
+  // search
+  const sb=$('searchBox'); if(sb) sb.oninput=()=>{ state.q=sb.value; const w=sb.selectionStart; render(); const n=$('searchBox'); if(n){n.focus(); n.setSelectionRange(w,w);} };
+
+  // policy reset
+  $('forceReset')&&($('forceReset').onclick=()=>openModal(modalReset()));
+
+  // supervisor financial editor
+  document.querySelectorAll('[data-editfin]').forEach(el=>el.onclick=()=>openModal(modalFinancials(el.dataset.editfin)));
+  // review / view
+  document.querySelectorAll('[data-review]').forEach(el=>el.onclick=()=>openModal(modalReview(el.dataset.review)));
+  document.querySelectorAll('[data-viewproj]').forEach(el=>el.onclick=()=>openModal(modalEditMine(el.dataset.viewproj, true)));
+  document.querySelectorAll('[data-versions]').forEach(el=>el.onclick=()=>openModal(modalVersions(el.dataset.versions)));
+  // formulation/closing
+  document.querySelectorAll('[data-editform]').forEach(el=>el.onclick=()=>openFormulation(el.dataset.editform));
+  document.querySelectorAll('[data-editclose]').forEach(el=>el.onclick=()=>openClosing(el.dataset.editclose));
+  document.querySelectorAll('[data-report]').forEach(el=>el.onclick=()=>openModal(modalReport(el.dataset.report)));
+  $('newForm')&&($('newForm').onclick=()=>openFormulation(null));
+  $('newClose')&&($('newClose').onclick=()=>openClosing(null));
+
+  // expert project editor
+  document.querySelectorAll('[data-editmine]').forEach(el=>el.onclick=()=>openModal(modalEditMine(el.dataset.editmine)));
+  $('newProj')&&($('newProj').onclick=()=>openModal(modalEditMine(null)));
+
+  // header buttons
+  $('logoutBtn').onclick=()=>{ DB.session=null; save(); state={screen:'landing'}; render(); };
+  $('bellBtn').onclick=()=>{ DB.notifications.forEach(n=>n.read=true); save(); render(); openModal(modalNotifs()); };
+
+  // footer
+  $('aboutLink').onclick=()=>openModal(modalAbout());
+  $('resetLink').onclick=()=>{ if(confirm('Reset all demo data?')) resetDemo(); };
+}
+
+function wireModal(){
+  const ov=$('overlay'); if(!ov) return;
+  ov.addEventListener('mousedown',e=>{ if(e.target===ov) closeModal(); });
+  document.querySelectorAll('[data-close]').forEach(el=>el.onclick=closeModal);
+
+  // --- save financials ---
+  $('autoCalc')&&($('autoCalc').onclick=()=>{
+    const total=+$('f_total').value||0, ext=+$('f_ext').value||0, intc=+$('f_int').value||0, cl=+$('f_close').value||0;
+    const gross=total-ext, net=gross-intc-cl;
+    $('f_gross').value=gross; $('f_net').value=net;
+  });
+  $('saveFin')&&($('saveFin').onclick=()=>{
+    const p=DB.projects.find(x=>x.id===$('saveFin').dataset.pid);
+    const g=v=>{const e=$(v).value; return e===''?null:Number(e);};
+    p.estimate=g('f_est'); p.dateEstimateShared=$('f_date').value?new Date($('f_date').value).getTime():null;
+    p.totalCostAfterTDS=g('f_total'); p.internalCost=g('f_int'); p.externalCost=g('f_ext');
+    p.finalClosingCost=g('f_close'); p.closingSheetLink=$('f_link').value;
+    p.finalGrossProfit=g('f_gross'); p.finalNetProfit=g('f_net');
+    save(); closeModal(); render();
+    toast(financialsComplete(p)?'Saved — project can now be closed':'Saved (still missing some required fields)');
+  });
+
+  // --- save expert 1-6 / create ---
+  $('saveMine')&&($('saveMine').onclick=()=>{
+    const id=$('saveMine').dataset.pid;
+    const data={ supervisorInCharge:$('m_sup').value, projectName:$('m_name').value.trim(),
+      projectType:$('m_type').value.trim(), expertRole:$('m_role').value.trim(), status:$('m_status').value };
+    if(!data.projectName){ toast('Project name is required'); return; }
+    if(id){ Object.assign(DB.projects.find(x=>x.id===id), data); }
+    else { DB.projects.unshift(Object.assign({id:uid(),expertInCharge:DB.session.user.name,updates:[],
+      estimate:null,dateEstimateShared:null,totalCostAfterTDS:null,internalCost:null,externalCost:null,
+      finalClosingCost:null,closingSheetLink:'',finalGrossProfit:null,finalNetProfit:null,
+      formulationId:null,closingId:null,review:null,createdAt:now()},data)); }
+    save(); closeModal(); render(); toast('Saved');
+  });
+  $('addUpdate')&&($('addUpdate').onclick=()=>{
+    const p=DB.projects.find(x=>x.id===$('addUpdate').dataset.pid);
+    const t=$('m_update').value.trim(); if(!t) return;
+    p.updates.push({t:now(),text:t}); save(); openModal(modalEditMine(p.id)); toast('Update posted');
+  });
+
+  // edit links / versions (expert uploads; supervisor views)
+  $('addVersion')&&($('addVersion').onclick=()=>{
+    const pid=$('addVersion').dataset.pid; const p=DB.projects.find(x=>x.id===pid);
+    const url=$('ver_url').value.trim(); if(!url){toast('Paste a link first');return;}
+    const label=$('ver_label').value.trim(); const fin=$('ver_final').checked;
+    p.versions=p.versions||[];
+    if(fin) p.versions.forEach(v=>v.final=false);
+    p.versions.push({id:uid(),label:label||('V'+(p.versions.length+1)),url:url,final:fin,t:now()});
+    save(); openModal(modalEditMine(pid)); toast('Edit link added');
+  });
+  document.querySelectorAll('[data-ver-del]').forEach(el=>el.onclick=()=>{
+    const pid=el.dataset.pid; const p=DB.projects.find(x=>x.id===pid);
+    p.versions=(p.versions||[]).filter(v=>v.id!==el.dataset.verDel);
+    save(); openModal(modalEditMine(pid)); toast('Link removed');
+  });
+  document.querySelectorAll('[data-ver-final]').forEach(el=>el.onclick=()=>{
+    const pid=el.dataset.pid; const p=DB.projects.find(x=>x.id===pid);
+    const v=(p.versions||[]).find(x=>x.id===el.dataset.verFinal); if(!v) return;
+    const willBe=!v.final; (p.versions||[]).forEach(x=>x.final=false); v.final=willBe;
+    save(); openModal(modalEditMine(pid)); toast(willBe?'Marked as final':'Final unset');
+  });
+
+  // --- review sliders ---
+  document.querySelectorAll('[data-rv]').forEach(sl=>sl.oninput=()=>{
+    const id=sl.id.replace('rv_',''); $('rvv_'+id).textContent=sl.value;
+    const tot=['creativity','timeline','thinking','closure'].reduce((a,k)=>a+(+$('rv_'+k).value),0);
+    $('rvTotal').textContent=tot+'/40';
+    $('rvWarn').style.display = tot<=20?'block':'none';
+  });
+  $('saveReview')&&($('saveReview').onclick=()=>{
+    const p=DB.projects.find(x=>x.id===$('saveReview').dataset.pid);
+    const rv={creativity:+$('rv_creativity').value,timeline:+$('rv_timeline').value,thinking:+$('rv_thinking').value,closure:+$('rv_closure').value};
+    rv.total=rv.creativity+rv.timeline+rv.thinking+rv.closure; p.review=rv; save();
+    if(rv.total<=20){ notifyAll(DB.session.user.name, `⚠ Expert ${p.expertInCharge}'s rating dropped to ${rv.total}/40 on "${p.projectName}". Schedule a meeting to understand the drop.`); }
+    closeModal(); render(); toast(rv.total<=20?'Review saved — meeting alert sent':'Review saved');
+  });
+
+  // --- formulation sheet (live waterfall + estimate; draft = editingForm) ---
+  function syncForm(){
+    const f=editingForm; if(!f) return;
+    if($('fm_title')) f.title=$('fm_title').value;
+    if($('fm_after')) f.afterTDSValue=num($('fm_after').value);
+    if($('fm_tds')) f.tdsPct=num($('fm_tds').value);
+    if($('fm_margin')) f.marginPct=num($('fm_margin').value);
+    if($('fm_fee')) f.productionFeePct=num($('fm_fee').value);
+    if($('fm_gst')) f.gstPct=num($('fm_gst').value);
+    if($('fm_notes')) f.notes=$('fm_notes').value;
+    if($('fm_proj')) f.assignedProjectId=$('fm_proj').value||null;
+    (f.internalItems||[]).forEach((it,i)=>{const d=document.querySelector('[data-int-desc="'+i+'"]'),a=document.querySelector('[data-int-amt="'+i+'"]'); if(d)it.desc=d.value; if(a)it.amount=num(a.value);});
+    (f.estimateItems||[]).forEach((it,i)=>{const d=document.querySelector('[data-est-desc="'+i+'"]'),q=document.querySelector('[data-est-qty="'+i+'"]'),r=document.querySelector('[data-est-rate="'+i+'"]'); if(d)it.desc=d.value; if(q)it.qty=num(q.value); if(r)it.rate=num(r.value);});
+  }
+  function paintForm(){
+    const cf=computeFormulation(editingForm); const set=(id,v)=>{const e=$(id); if(e)e.textContent=v;};
+    set('cTds',INR(cf.tds)); set('cTotal',INR(cf.total)); set('cAfterTDS',INR(cf.afterTDS)); set('cMargin',INR(cf.margin)); set('cAfterMargin',INR(cf.afterMargin));
+    set('cInternal',INR(cf.internal)); set('cBudget',INR(cf.externalBudget));
+    set('cEstTotal',INR(cf.estTotal)); set('cFee',INR(cf.prodFee)); set('cSub',INR(cf.estSub)); set('cCgst',INR(cf.cgst)); set('cSgst',INR(cf.sgst)); set('cGrand',INR(cf.estGrand));
+    (editingForm.estimateItems||[]).forEach((it,i)=>set('estamt_'+i, INR(num(it.qty||1)*num(it.rate))));
+    const cmp=$('cCompare'); if(cmp){const diff=cf.externalBudget-cf.estTotal;
+      cmp.textContent=diff>=0?('Planned estimate is '+INR(diff)+' under the external budget ✓'):('Planned estimate is '+INR(-diff)+' OVER the external budget ⚠');
+      cmp.style.color=diff>=0?'var(--ok)':'var(--bad)';}
+  }
+  function saveForm(lock){
+    syncForm(); const f=editingForm;
+    if(!f.title||!f.title.trim()){toast('Sheet title is required');return;}
+    if(lock && !f.assignedProjectId){toast('Choose a project to assign before locking');return;}
+    f.locked=!!lock;
+    if(f.id){const i=DB.formulations.findIndex(x=>x.id===f.id); DB.formulations[i]=f;}
+    else{f.id=uid(); f.createdAt=now(); DB.formulations.unshift(f);}
+    if(lock){const proj=DB.projects.find(p=>p.id===f.assignedProjectId); if(proj) proj.formulationId=f.id;}
+    editingForm=null; save(); closeModal(); render(); toast(lock?'🔒 Formulation locked & assigned':'Draft saved — Unassigned');
+  }
+  if($('fm_title')){
+    const recalc=()=>{syncForm(); paintForm();};
+    ['fm_total','fm_tds','fm_margin','fm_fee','fm_gst'].forEach(id=>$(id)&&($(id).oninput=recalc));
+    document.querySelectorAll('[data-int-desc],[data-int-amt],[data-est-desc],[data-est-qty],[data-est-rate]').forEach(el=>el.oninput=recalc);
+    $('fm_title')&&($('fm_title').oninput=syncForm); $('fm_notes')&&($('fm_notes').oninput=syncForm); $('fm_proj')&&($('fm_proj').onchange=syncForm);
+    document.querySelectorAll('[data-int-del]').forEach(el=>el.onclick=()=>{syncForm(); editingForm.internalItems.splice(+el.dataset.intDel,1); openModal(modalFormulation());});
+    document.querySelectorAll('[data-est-del]').forEach(el=>el.onclick=()=>{syncForm(); editingForm.estimateItems.splice(+el.dataset.estDel,1); openModal(modalFormulation());});
+    $('addInt')&&($('addInt').onclick=()=>{syncForm(); editingForm.internalItems.push({desc:'',amount:0}); openModal(modalFormulation());});
+    $('addEst')&&($('addEst').onclick=()=>{syncForm(); editingForm.estimateItems.push({desc:'',qty:1,rate:0}); openModal(modalFormulation());});
+    $('saveFormDraft')&&($('saveFormDraft').onclick=()=>saveForm(false));
+    $('lockForm')&&($('lockForm').onclick=()=>saveForm(true));
+  }
+
+  // --- closing sheet (actual spend -> savings/profit; draft = editingClose) ---
+  function syncClose(){
+    const c=editingClose; if(!c) return;
+    if($('cl_title')) c.title=$('cl_title').value;
+    if($('cl_notes')) c.notes=$('cl_notes').value;
+    if($('cl_proj')) c.assignedProjectId=$('cl_proj').value||null;
+    (c.actualItems||[]).forEach((it,i)=>{const d=document.querySelector('[data-act-desc="'+i+'"]'),a=document.querySelector('[data-act-amt="'+i+'"]'); if(d)it.desc=d.value; if(a)it.amount=num(a.value);});
+  }
+  function paintClose(){
+    const c=editingClose; const cc=computeClosing(c,formulationOfProject(c.assignedProjectId));
+    const set=(id,v,col)=>{const e=$(id); if(e){e.textContent=v; if(col!==undefined)e.style.color=col;}};
+    set('oBudget',INR(cc.budget)); set('oSpent',INR(cc.spent));
+    set('oSaved',INR(cc.moneySaved), cc.moneySaved<0?'var(--bad)':'var(--ok)');
+    set('oTotalP',INR(cc.totalProfit)); set('oActualP',INR(cc.actualProfit), cc.actualProfit<0?'var(--bad)':'var(--ok)');
+  }
+  function saveClose(lock){
+    syncClose(); const c=editingClose;
+    if(!c.title||!c.title.trim()){toast('Sheet title is required');return;}
+    if(lock && !c.assignedProjectId){toast('Choose a closed project to assign before locking');return;}
+    c.locked=!!lock;
+    if(c.id){const i=DB.closings.findIndex(x=>x.id===c.id); DB.closings[i]=c;}
+    else{c.id=uid(); c.createdAt=now(); DB.closings.unshift(c);}
+    if(lock){const proj=DB.projects.find(p=>p.id===c.assignedProjectId); if(proj){proj.closingId=c.id; proj.closingSheetLink='closing-sheet://'+c.id;}}
+    const id=c.id; editingClose=null; save(); closeModal(); render();
+    if(lock) openModal(modalReport(id)); else toast('Draft saved — Unassigned');
+  }
+  if($('cl_title')){
+    const recalcC=()=>{syncClose(); paintClose();};
+    document.querySelectorAll('[data-act-desc],[data-act-amt]').forEach(el=>el.oninput=recalcC);
+    $('cl_title')&&($('cl_title').oninput=syncClose); $('cl_notes')&&($('cl_notes').oninput=syncClose);
+    $('cl_proj')&&($('cl_proj').onchange=()=>{syncClose(); openModal(modalClosing());});
+    document.querySelectorAll('[data-act-del]').forEach(el=>el.onclick=()=>{syncClose(); editingClose.actualItems.splice(+el.dataset.actDel,1); openModal(modalClosing());});
+    $('addAct')&&($('addAct').onclick=()=>{syncClose(); editingClose.actualItems.push({desc:'',amount:0}); openModal(modalClosing());});
+    $('saveCloseDraft')&&($('saveCloseDraft').onclick=()=>saveClose(false));
+    $('lockClose')&&($('lockClose').onclick=()=>saveClose(true));
+  }
+  $('showReportBtn')&&($('showReportBtn').onclick=()=>openModal(modalReport($('showReportBtn').dataset.cid)));
+
+  // --- password reset ---
+  $('doReset')&&($('doReset').onclick=()=>{
+    const a=$('np1').value,b=$('np2').value;
+    if(a.length<6){$('npErr').textContent='Use at least 6 characters.';return;}
+    if(a!==b){$('npErr').textContent='Passwords do not match.';return;}
+    const sup=DB.session.user; sup.pass=hash(a); sup.passSet=now();
+    DB.supervisors.find(s=>s.id===sup.id).pass=sup.pass;
+    DB.supervisors.find(s=>s.id===sup.id).passSet=sup.passSet;
+    save(); closeModal(); render(); toast('Password updated — next reset in 90 days');
+  });
+
+  // --- notifications ---
+  $('clearNotifs')&&($('clearNotifs').onclick=()=>{ DB.notifications=[]; save(); closeModal(); render(); });
+}
+
+/* =========================== TOAST =========================== */
+let toastTimer;
+function toast(msg){
+  $('toastRoot').innerHTML=`<div class="toast ok">✅ ${msg}</div>`;
+  clearTimeout(toastTimer); toastTimer=setTimeout(()=>$('toastRoot').innerHTML='',2600);
+}
+
+/* =========================== BOOT =========================== */
+if(DB.session){ state = DB.session.role==='sup' ? {screen:'app-sup',tab:'active'} : {screen:'app-exp',tab:'mine'}; }
+render();
+</script>
+</body>
+</html>
