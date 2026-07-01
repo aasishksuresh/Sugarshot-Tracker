@@ -367,6 +367,16 @@
   .toast{border-radius:14px;background:rgba(19,22,29,.92);backdrop-filter:blur(10px);box-shadow:var(--shadow)}
   .hello{font-size:27px}
   .page-head h2{font-size:23px}
+
+  /* team passcode gate */
+  .gate{position:fixed;inset:0;z-index:200;display:grid;place-items:center;padding:24px;
+    background:radial-gradient(900px 520px at 80% -10%, rgba(255,93,115,.16), transparent 60%), rgba(8,10,15,.96);backdrop-filter:blur(8px)}
+  .gate-card{width:100%;max-width:380px;text-align:center;padding:34px 28px;border-radius:var(--radius-lg);border:1px solid var(--line);
+    background:linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.01)), var(--panel);box-shadow:var(--shadow)}
+  .gate-card .logo{margin:0 auto 16px}
+  .gate-card h3{margin:0 0 6px;font-family:'Space Grotesk','Inter',sans-serif}
+  .gate-card p{color:var(--muted);font-size:13px;margin:0 0 18px}
+  .gate-card .field{text-align:center;letter-spacing:2px}
 </style>
 </head>
 <body>
@@ -393,6 +403,18 @@
 <div id="modalRoot"></div>
 <div id="toastRoot"></div>
 
+<!-- Team passcode gate (light protection for a shared link; change SS_PASSCODE below) -->
+<div id="gate" class="gate" style="display:none">
+  <div class="gate-card">
+    <div class="logo">S</div>
+    <h3>Sugar Shot Work Tracker</h3>
+    <p>Private platform — enter the team passcode to continue.</p>
+    <input id="gateInput" type="password" class="field" placeholder="Team passcode" autocomplete="off"/>
+    <div class="err" id="gateErr"></div>
+    <button class="btn btn-sup btn-block" id="gateBtn">Enter</button>
+  </div>
+</div>
+
 <script>
 /* =========================================================================
    Sugar Shot Work Tracker — single-file prototype
@@ -401,7 +423,7 @@
    NOT production-grade. See About panel for the path to a real deployment.
    ========================================================================= */
 
-const KEY = 'sugarshot_db_v6';
+const KEY = 'sugarshot_db_v9';
 const DAY = 86400000;
 const now = () => Date.now();
 const uid = () => Math.random().toString(36).slice(2,9);
@@ -435,29 +457,44 @@ function seed(){
     id:uid(), supervisorInCharge:'', projectName:'', projectType:'', expertInCharge:'', expertRole:'',
     status:'Active', estimate:null, dateEstimateShared:null, totalCostAfterTDS:null, internalCost:null,
     externalCost:null, finalClosingCost:null, closingSheetLink:'', finalGrossProfit:null, finalNetProfit:null,
-    updates:[], versions:[], formulationId:null, closingId:null, review:null, createdAt:t
+    updates:[], versions:[], cost:null, formulationId:null, closingId:null, review:null, createdAt:t
   }, o);
 
   const projects = [
     mk({supervisorInCharge:'Aasish Suresh', projectName:'Tanishq Festive TVC', projectType:'TV Commercial',
         expertInCharge:'Karan Patel', expertRole:'Director of Photography', status:'Active',
-        estimate:1800000, dateEstimateShared:t-30*DAY, totalCostAfterTDS:1620000, internalCost:300000,
-        externalCost:900000, finalClosingCost:null, finalGrossProfit:null, finalNetProfit:null,
+        estimate:1782000, dateEstimateShared:t-30*DAY, totalCostAfterTDS:1620000, internalCost:300000,
+        externalCost:834000, finalClosingCost:710000, finalGrossProfit:910000, finalNetProfit:610000,
+        cost:{afterTDSValue:1620000,tdsPct:10,marginPct:30,
+          internalItems:[{desc:'Creative Director',amount:120000},{desc:'Editing / Post',amount:180000}],
+          spentItems:[{desc:'Studio & Equipment',amount:350000},{desc:'Crew & Talent',amount:300000},{desc:'Food & Travel',amount:60000}],
+          closingLink:'https://drive.google.com/drive/tanishq-closing'},
         updates:[{t:t-9*DAY,text:'Pre‑production locked, location recce done in Jaipur.'},{t:t-2*DAY,text:'Shoot day 1 wrapped — 80% coverage.'}],
         versions:[{id:uid(),label:'V1 — rough cut',url:'https://drive.google.com/file/d/tanishq-v1/view',final:false,t:t-7*DAY},
                   {id:uid(),label:'V2 — with VO + music',url:'https://frame.io/tanishq-v2',final:false,t:t-1*DAY}]}),
     mk({supervisorInCharge:'Aasish Suresh', projectName:'Swiggy Monsoon Reel Pack', projectType:'Social Media',
         expertInCharge:'Neha Iyer', expertRole:'Editor / Colorist', status:'Completed',
-        estimate:450000, dateEstimateShared:t-70*DAY, totalCostAfterTDS:405000, internalCost:90000,
-        externalCost:120000, finalClosingCost:135000, closingSheetLink:'', finalGrossProfit:285000, finalNetProfit:180000,
+        estimate:440000, dateEstimateShared:t-70*DAY, totalCostAfterTDS:400000, internalCost:110000,
+        externalCost:170000, finalClosingCost:61000, closingSheetLink:'', finalGrossProfit:339000, finalNetProfit:229000,
+        cost:{afterTDSValue:400000,tdsPct:10,marginPct:30,
+          internalItems:[{desc:'Creative Director / Project Manager [Anirudh]',amount:10000},{desc:'Editing',amount:100000}],
+          spentItems:[{desc:'Studio [MajikHouse]',amount:40000},{desc:'Food',amount:4000},{desc:'Host',amount:15000},{desc:'Travel',amount:2000}],
+          closingLink:''},
         updates:[{t:t-40*DAY,text:'Delivered 12 reels, all approved by client.'}],
+        versions:[{id:uid(),label:'V1',url:'https://frame.io/swiggy-v1',final:false,t:t-45*DAY},
+                  {id:uid(),label:'Final Pack',url:'https://drive.google.com/drive/swiggy-final',final:true,t:t-40*DAY}],
         review:{creativity:9,timeline:8,thinking:9,closure:9,total:35}}),
     mk({supervisorInCharge:'Riya Menon', projectName:'CRED Diwali Film', projectType:'Branded Film',
-        expertInCharge:'Arjun Rao', expertRole:'3D / VFX Artist', status:'Completed',
-        estimate:2600000, dateEstimateShared:t-90*DAY,
-        // financials NOT fully filled -> stays in Active bucket as "Awaiting financials"
-        totalCostAfterTDS:null, internalCost:null, externalCost:null, finalClosingCost:null,
-        updates:[{t:t-20*DAY,text:'Final render delivered. Awaiting supervisor cost closure.'}]}),
+        expertInCharge:'Arjun Rao', expertRole:'3D / VFX Artist', status:'Active',
+        estimate:2574000, dateEstimateShared:t-90*DAY, totalCostAfterTDS:2340000, internalCost:400000,
+        externalCost:1238000, finalClosingCost:1120000, finalGrossProfit:1220000, finalNetProfit:820000,
+        cost:{afterTDSValue:2340000,tdsPct:10,marginPct:30,
+          internalItems:[{desc:'Creative Direction',amount:150000},{desc:'VFX Supervision',amount:250000}],
+          spentItems:[{desc:'3D / VFX Studio',amount:700000},{desc:'Render & Compositing',amount:300000},{desc:'Crew & Misc',amount:120000}],
+          closingLink:'https://drive.google.com/drive/cred-closing'},
+        updates:[{t:t-20*DAY,text:'Final render delivered and approved by client.'}],
+        versions:[{id:uid(),label:'V1 — previz',url:'https://frame.io/cred-v1',final:false,t:t-30*DAY},
+                  {id:uid(),label:'Final Film',url:'https://drive.google.com/drive/cred-final',final:true,t:t-20*DAY}]}),
     mk({supervisorInCharge:'Riya Menon', projectName:'Zomato Pitch Concept', projectType:'Pitch / Concept',
         expertInCharge:'Karan Patel', expertRole:'Creative Director', status:'Lost',
         estimate:1200000, dateEstimateShared:t-60*DAY, totalCostAfterTDS:0, internalCost:60000,
@@ -466,14 +503,25 @@ function seed(){
         review:{creativity:7,timeline:6,thinking:5,closure:2,total:20}}),
     mk({supervisorInCharge:'Aasish Suresh', projectName:'boAt Earbuds Launch Film', projectType:'Branded Film',
         expertInCharge:'Karan Patel', expertRole:'Director of Photography', status:'Active',
-        estimate:950000, dateEstimateShared:t-12*DAY,
+        estimate:935000, dateEstimateShared:t-12*DAY, totalCostAfterTDS:850000, internalCost:150000,
+        externalCost:445000, finalClosingCost:390000, finalGrossProfit:460000, finalNetProfit:310000,
+        cost:{afterTDSValue:850000,tdsPct:10,marginPct:30,
+          internalItems:[{desc:'Direction',amount:60000},{desc:'Editing',amount:90000}],
+          spentItems:[{desc:'Studio',amount:180000},{desc:'Crew',amount:120000},{desc:'Gear rental',amount:90000}],
+          closingLink:''},
         updates:[{t:t-6*DAY,text:'Mood board approved by client, casting shortlist sent.'},
                  {t:t-2*DAY,text:'Studio locked for the 18th, gear & crew list finalized.'},
-                 {t:t-4*3600000,text:'Storyboard v2 uploaded for supervisor sign‑off.'}]}),
+                 {t:t-4*3600000,text:'Storyboard v2 uploaded for supervisor sign‑off.'}],
+        versions:[{id:uid(),label:'V1 — assembly',url:'https://frame.io/boat-v1',final:false,t:t-4*DAY},
+                  {id:uid(),label:'V2 — client cut',url:'https://drive.google.com/drive/boat-v2',final:false,t:t-1*DAY}]}),
     mk({supervisorInCharge:'Aasish Suresh', projectName:'Nykaa Beauty Campaign', projectType:'Social Media',
         expertInCharge:'Karan Patel', expertRole:'Director of Photography', status:'Completed',
-        estimate:700000, dateEstimateShared:t-50*DAY, totalCostAfterTDS:630000, internalCost:120000,
-        externalCost:210000, finalClosingCost:330000, finalGrossProfit:420000, finalNetProfit:300000,
+        estimate:693000, dateEstimateShared:t-50*DAY, totalCostAfterTDS:630000, internalCost:120000,
+        externalCost:321000, finalClosingCost:210000, finalGrossProfit:420000, finalNetProfit:300000,
+        cost:{afterTDSValue:630000,tdsPct:10,marginPct:30,
+          internalItems:[{desc:'Editing / Grade',amount:120000}],
+          spentItems:[{desc:'Shoot & Crew',amount:150000},{desc:'Post & Misc',amount:60000}],
+          closingLink:''},
         updates:[{t:t-44*DAY,text:'15 hero stills + 4 reels delivered — client signed off, all approved.'}],
         versions:[{id:uid(),label:'V1',url:'https://frame.io/nykaa-v1',final:false,t:t-46*DAY},
                   {id:uid(),label:'V2 — client notes',url:'https://frame.io/nykaa-v2',final:false,t:t-45*DAY},
@@ -495,25 +543,14 @@ function seed(){
      internalItems:[], estimateItems:[], productionFeePct:10, gstPct:18, notes:'Awaiting brief confirmation.',
      locked:false, assignedProjectId:null, createdAt:t-3*DAY},
   ];
-  projects[1].formulationId = 'f1';
+  const closings = [];
 
-  // Closing Sheet = actual external spend -> Money Saved / Total Profit / Actual Profit (ref sheet 1 bottom)
-  const closings = [
-    {id:'c1', title:'Swiggy Monsoon — Closing Sheet',
-     actualItems:[{desc:'Studio [MajikHouse]',amount:40000},{desc:'Food',amount:4000},
-                  {desc:'Host',amount:15000},{desc:'Travel',amount:2000}],
-     notes:'Came in under the external budget — efficient pipeline.',
-     locked:true, assignedProjectId: projects[1].id, createdAt:t-39*DAY},
-  ];
-  projects[1].closingId = 'c1';
-  projects[1].closingSheetLink = 'closing-sheet://c1';
-
-  return {supervisors, experts, projects, formulations, closings, notifications:[], session:null, v:6};
+  return {supervisors, experts, projects, formulations, closings, notifications:[], session:null, v:9};
 }
 
 /* =========================== DB =========================== */
 let DB = load();
-function load(){ try{const r=localStorage.getItem(KEY); if(r){const d=JSON.parse(r); if(d.v===6) return d;}}catch(e){} const s=seed(); localStorage.setItem(KEY,JSON.stringify(s)); return s; }
+function load(){ try{const r=localStorage.getItem(KEY); if(r){const d=JSON.parse(r); if(d.v===9) return d;}}catch(e){} const s=seed(); localStorage.setItem(KEY,JSON.stringify(s)); return s; }
 function save(){ localStorage.setItem(KEY, JSON.stringify(DB)); }
 function resetDemo(){ localStorage.removeItem(KEY); DB=load(); state={screen:'landing'}; render(); toast('Demo data reset'); }
 
@@ -582,13 +619,8 @@ function computeFormulation(f){
   const afterInternal = afterMargin - internal;            // Project Value (After Internal Cost) = External Budget
   // Production estimate (planned external, shared to client)
   const estTotal   = (f.estimateItems||[]).reduce((a,x)=>a+num(x.qty||1)*num(x.rate),0);
-  const prodFee    = estTotal * num(f.productionFeePct)/100;
-  const estSub     = estTotal + prodFee;
-  const cgst       = estSub * (num(f.gstPct)/2)/100;
-  const sgst       = estSub * (num(f.gstPct)/2)/100;
-  const estGrand   = estSub + cgst + sgst;
   return {total,tds,afterTDS,margin,afterMargin,internal,afterInternal,externalBudget:afterInternal,
-          estTotal,prodFee,estSub,cgst,sgst,estGrand};
+          estTotal,estGrand:estTotal};
 }
 function computeClosing(c,f){
   const cf = computeFormulation(f||{});
@@ -600,7 +632,16 @@ function computeClosing(c,f){
   return {spent,budget,moneySaved,totalProfit,actualProfit,cf};
 }
 function formulationOfProject(pid){ const p=DB.projects.find(x=>x.id===pid); return p&&p.formulationId?DB.formulations.find(f=>f.id===p.formulationId):null; }
-let editingForm=null, editingClose=null;   // in-progress drafts while a sheet modal is open
+// Per-project cost breakdown (same waterfall as the cost sheet) used in the project Financials modal
+function computeCost(c){
+  const cf = computeFormulation(c);                          // afterTDS, tds, total, margin, afterMargin, internal, externalBudget
+  const spent = (c.spentItems||[]).reduce((a,x)=>a+num(x.amount),0);  // Total Amount Spent
+  const moneySaved  = cf.externalBudget - spent;             // Money Saved
+  const totalProfit = cf.margin + cf.internal + moneySaved;  // Total Profit
+  const actualProfit= cf.margin + moneySaved;                // Actual Profit
+  return Object.assign({}, cf, {spent, moneySaved, totalProfit, actualProfit});
+}
+let editingForm=null, editingClose=null, editingFin=null, editingFinPid=null;   // in-progress drafts while a sheet modal is open
 
 /* =========================== RENDER ROOT =========================== */
 function render(){
@@ -677,8 +718,7 @@ function viewSupApp(){
     ['completed','✅','Completed Projects',counts.completed],
     ['lost','❌','Lost Projects',counts.lost],
     ['experts','⭐','Experts',counts.experts],
-    ['formulation','🧮','Project Formulation Sheet',null],
-    ['closing','📊','Project Closing Sheet',null],
+    ['formulation','🧮','Formulation Calculator',null],
   ];
   const navHtml = nav.map(n=>`<button class="navitem ${tab===n[0]?'active':''}" data-tab="${n[0]}">
      <span class="ic">${n[1]}</span> ${n[2]} ${n[3]!=null?`<span class="navcount">${n[3]}</span>`:''}</button>`).join('');
@@ -694,10 +734,9 @@ function viewSupApp(){
 }
 
 function supContent(tab){
-  if(tab==='active'||tab==='completed'||tab==='lost') return supProjectsTab(tab);
   if(tab==='experts') return state.selectedExpert ? supExpertDetail() : supExpertsList();
   if(tab==='formulation') return supFormulationTab();
-  if(tab==='closing') return supClosingTab();
+  return supProjectsTab(tab==='completed'||tab==='lost'?tab:'active');
 }
 
 function policyBanner(){
@@ -717,7 +756,7 @@ function supProjectsTab(bucket){
   const rows = list.filter(p=>!q || p.projectName.toLowerCase().includes(q) || p.expertInCharge.toLowerCase().includes(q));
 
   const head = `<div class="page-head"><h2>${title}</h2>
-     <span class="desc">${rows.length} project(s) · params 1–6 filled by the Expert · params 7–15 by you</span></div>`;
+     <span class="desc">${rows.length} project(s) · the Expert fills the project details · you fill the cost breakdown</span></div>`;
 
   const summary = bucket==='active' ? `<div class="cards">
      <div class="card"><div class="k">Active value (est.)</div><div class="v">${INR(list.reduce((a,p)=>a+(p.estimate||0),0))}</div></div>
@@ -725,40 +764,52 @@ function supProjectsTab(bucket){
      <div class="card"><div class="k">Experts engaged</div><div class="v sm">${new Set(list.map(p=>p.expertInCharge)).size}</div></div>
    </div>`:'';
 
-  const table = rows.length ? `<div class="tablewrap"><table>
-    <thead><tr>
-      <th>1 · Supervisor</th><th>2 · Project</th><th>3 · Type</th><th>4 · Expert</th><th>5 · Role</th><th>6 · Status</th>
-      <th class="num">7 · Estimate</th><th>8 · Est. shared</th><th class="num">9 · Cost (a/TDS)</th>
-      <th class="num">10 · Internal</th><th class="num">11 · External</th><th class="num">12 · Closing</th>
-      <th>13 · Sheet</th><th class="num">14 · Gross</th><th class="num">15 · Net</th><th>Edits</th><th></th>
+  const sub = 'font-weight:400;color:var(--muted);font-size:12px';
+
+  // Table 1 — Project & Expert summary (filled by the Expert)
+  const expertTable = `<div class="panel-head" style="margin-top:6px"><h3>Project &amp; Expert summary <span style="${sub}">— filled by the Expert</span></h3></div>
+    <div class="tablewrap" style="margin-bottom:22px"><table style="min-width:620px"><thead><tr>
+      <th>Project</th><th>Type</th><th>Supervisor</th><th>Expert</th><th>Role</th><th>Status</th><th>Edits</th>
     </tr></thead><tbody>
-    ${rows.map(p=>{
-      const aw = awaitingFinancials(p);
-      return `<tr>
-        <td class="supervisor-cell">${esc(p.supervisorInCharge)}</td>
+    ${rows.map(p=>`<tr>
         <td><b>${esc(p.projectName)}</b></td>
         <td>${esc(p.projectType)}</td>
+        <td class="supervisor-cell">${esc(p.supervisorInCharge)}</td>
         <td class="expert-cell" data-expert="${esc(p.expertInCharge)}">${esc(p.expertInCharge)}</td>
         <td>${esc(p.expertRole)}</td>
-        <td><span class="badge b-${bucketOf(p).toLowerCase()}">${bucketOf(p)}</span>${aw?' <span class="badge b-await">Awaiting financials</span>':''}</td>
-        <td class="num">${INR(p.estimate)}</td>
+        <td><span class="badge b-${bucketOf(p).toLowerCase()}">${bucketOf(p)}</span>${awaitingFinancials(p)?' <span class="badge b-await">Awaiting financials</span>':''}</td>
+        <td>${(p.versions&&p.versions.length)?`<button class="btn btn-sm btn-ghost" data-versions="${p.id}">🔗 ${p.versions.length}${p.versions.some(v=>v.final)?' ✓':''}</button>`:'—'}</td>
+      </tr>`).join('')}
+    </tbody></table></div>`;
+
+  // Table 2 — Financials (your cost breakdown)
+  const finTable = `<div class="panel-head"><h3>Financials <span style="${sub}">— your cost breakdown</span></h3></div>
+    <div class="tablewrap"><table style="min-width:840px"><thead><tr>
+      <th>Date shared</th><th>Project</th><th class="num">Total Value</th><th class="num">After TDS</th>
+      <th class="num">Internal Cost</th><th class="num">External Budget</th><th class="num">Spent</th>
+      <th class="num">Total Profit</th><th class="num">Actual Profit</th><th>Sheet</th><th></th>
+    </tr></thead><tbody>
+    ${rows.map(p=>`<tr>
         <td>${fdate(p.dateEstimateShared)}</td>
+        <td><b>${esc(p.projectName)}</b></td>
+        <td class="num">${INR(p.estimate)}</td>
         <td class="num">${INR(p.totalCostAfterTDS)}</td>
         <td class="num">${INR(p.internalCost)}</td>
         <td class="num">${INR(p.externalCost)}</td>
         <td class="num">${INR(p.finalClosingCost)}</td>
-        <td>${p.closingId?'<span class="badge b-assigned">Linked</span>':(p.closingSheetLink?esc(p.closingSheetLink):'—')}</td>
         <td class="num">${INR(p.finalGrossProfit)}</td>
         <td class="num">${INR(p.finalNetProfit)}</td>
-        <td>${(p.versions&&p.versions.length)?`<button class="btn btn-sm btn-ghost" data-versions="${p.id}">🔗 ${p.versions.length}${p.versions.some(v=>v.final)?' ✓':''}</button>`:'—'}</td>
-        <td><button class="btn btn-sm btn-sup" data-editfin="${p.id}">Fill 7–15</button></td>
-      </tr>`;}).join('')}
-    </tbody></table></div>`
-    : `<div class="tablewrap"><div class="empty">No ${bucket} projects yet.${bucket==='completed'?' A project lands here only when the Expert marks it Completed <b>and</b> you fill parameters 7–15.':''}</div></div>`;
+        <td>${p.closingSheetLink?`<a href="${esc(normUrl(p.closingSheetLink))}" target="_blank" rel="noopener noreferrer" style="color:var(--info)">link ↗</a>`:'—'}</td>
+        <td style="display:flex;gap:6px;white-space:nowrap"><button class="btn btn-sm btn-sup" data-editfin="${p.id}">Cost breakdown</button>${p.cost?`<button class="btn btn-sm btn-ghost" data-report="${p.id}">📊 Report</button>`:''}</td>
+      </tr>`).join('')}
+    </tbody></table></div>`;
+
+  const tables = rows.length ? (expertTable + finTable)
+    : `<div class="tablewrap"><div class="empty">No ${bucket} projects yet.${bucket==='completed'?' A project lands here only when the Expert marks it Completed <b>and</b> you fill its cost breakdown.':''}</div></div>`;
 
   return policyBanner() + head + summary +
     `<div class="toolbar"><input class="field search" id="searchBox" placeholder="Search project or expert…" value="${esc(state.q||'')}"/></div>` +
-    table;
+    tables;
 }
 
 /* ---------- Experts list (Tab 4) ---------- */
@@ -810,7 +861,6 @@ function supExpertDetail(){
 /* ---------- Tab 5: Formulation sheets ---------- */
 function supFormulationTab(){
   const rows = DB.formulations.map(f=>{
-    const proj = f.assignedProjectId ? DB.projects.find(p=>p.id===f.assignedProjectId) : null;
     const cf = computeFormulation(f);
     return `<tr>
       <td><b>${esc(f.title)}</b></td>
@@ -818,15 +868,14 @@ function supFormulationTab(){
       <td class="num">${PCT(num(f.marginPct))}</td>
       <td class="num">${INR(cf.externalBudget)}</td>
       <td>${f.locked?'<span class="badge b-locked">Locked</span>':'<span class="badge b-unassigned">Draft (unlocked)</span>'}</td>
-      <td>${f.locked? (proj?`<span class="badge b-assigned">${esc(proj.projectName)}</span>`:'<span class="badge b-unassigned">Unassigned</span>') : '<span class="badge b-unassigned">Unassigned</span>'}</td>
       <td><button class="btn btn-sm btn-sup" data-editform="${f.id}">${f.locked?'View':'Edit / Lock'}</button></td>
     </tr>`;}).join('');
-  return policyBanner()+`<div class="page-head"><h2>Project Formulation Sheet</h2>
-      <span class="desc">Profit waterfall + production estimate. Click “Formulation Locked” to assign it. Unlocked = Unassigned.</span></div>
+  return policyBanner()+`<div class="page-head"><h2>Formulation Calculator</h2>
+      <span class="desc">Reusable pricing calculator — profit waterfall + production estimate. Save or lock any sheet for reference.</span></div>
     <div class="toolbar"><button class="btn btn-sup" id="newForm">+ New Formulation Sheet</button></div>
-    <div class="tablewrap"><table style="min-width:760px"><thead><tr>
-      <th>Sheet</th><th class="num">Total value (excl GST)</th><th class="num">Margin %</th><th class="num">External budget</th><th>Lock</th><th>Assigned to</th><th></th>
-    </tr></thead><tbody>${rows||'<tr><td colspan="7" class="empty">No formulation sheets yet.</td></tr>'}</tbody></table></div>`;
+    <div class="tablewrap"><table style="min-width:720px"><thead><tr>
+      <th>Project</th><th class="num">Total value (excl GST)</th><th class="num">Margin %</th><th class="num">External budget</th><th>Lock</th><th></th>
+    </tr></thead><tbody>${rows||'<tr><td colspan="6" class="empty">No formulation sheets yet.</td></tr>'}</tbody></table></div>`;
 }
 
 /* ---------- Tab 6: Closing sheets ---------- */
@@ -942,41 +991,84 @@ function expReviews(){
 function openModal(html){ $('modalRoot').innerHTML = `<div class="overlay" id="overlay">${html}</div>`; wireModal(); }
 function closeModal(){ $('modalRoot').innerHTML=''; }
 
-/* ---- Supervisor: fill params 7–15 ---- */
-function modalFinancials(pid){
+/* ---- Supervisor: per-project COST BREAKDOWN (mirrors the reference cost sheet, live recalc) ---- */
+function openFinancials(pid){
   const p = DB.projects.find(x=>x.id===pid);
-  const link = p.closingId ? 'Linked closing sheet #'+p.closingId : (p.closingSheetLink||'');
-  return `<div class="modal lg"><div class="modal-head"><h3>${esc(p.projectName)} — Financials (7–15)</h3>
+  editingFinPid = pid;
+  editingFin = p.cost ? JSON.parse(JSON.stringify(p.cost)) : {
+    afterTDSValue: num(p.totalCostAfterTDS),
+    tdsPct: 10, marginPct: 30,
+    internalItems: num(p.internalCost)>0 ? [{desc:'Internal cost',amount:num(p.internalCost)}] : [{desc:'',amount:0}],
+    spentItems:   num(p.finalClosingCost)>0 ? [{desc:'External spend',amount:num(p.finalClosingCost)}] : [{desc:'',amount:0}],
+    closingLink: p.closingSheetLink||''
+  };
+  openModal(modalFinancials());
+}
+function modalFinancials(){
+  const pid = editingFinPid; const p = DB.projects.find(x=>x.id===pid); const c = editingFin;
+  const cc = computeCost(c);
+  const intRows = (c.internalItems||[]).map((it,i)=>`<div class="linerow">
+     <input class="field" data-fint-desc="${i}" value="${esc(it.desc)}" placeholder="Resource / cost (e.g. Editing)"/>
+     <input class="field" data-fint-amt="${i}" type="number" value="${it.amount}" placeholder="₹"/>
+     <button class="x" data-fint-del="${i}" title="remove">✕</button></div>`).join('');
+  const spRows = (c.spentItems||[]).map((it,i)=>`<div class="linerow">
+     <input class="field" data-fsp-desc="${i}" value="${esc(it.desc)}" placeholder="Spent on (Studio, Food, Host…)"/>
+     <input class="field" data-fsp-amt="${i}" type="number" value="${it.amount}" placeholder="₹"/>
+     <button class="x" data-fsp-del="${i}" title="remove">✕</button></div>`).join('');
+  return `<div class="modal lg"><div class="modal-head"><h3>${esc(p.projectName)} — Cost Breakdown</h3>
       <button class="x" data-close>×</button></div>
     <div class="modal-body">
-      <div class="section-title">Filled by the Expert (read‑only)</div>
       <div class="grid3">
-        <div class="ro"><div class="k">1 · Supervisor</div><div class="v">${esc(p.supervisorInCharge)}</div></div>
-        <div class="ro"><div class="k">2 · Project</div><div class="v">${esc(p.projectName)}</div></div>
-        <div class="ro"><div class="k">3 · Type</div><div class="v">${esc(p.projectType)}</div></div>
-        <div class="ro"><div class="k">4 · Expert</div><div class="v">${esc(p.expertInCharge)}</div></div>
-        <div class="ro"><div class="k">5 · Role</div><div class="v">${esc(p.expertRole)}</div></div>
-        <div class="ro"><div class="k">6 · Status</div><div class="v">${esc(p.status)}</div></div>
+        <div class="ro"><div class="k">Expert</div><div class="v">${esc(p.expertInCharge)||'—'}</div></div>
+        <div class="ro"><div class="k">Role</div><div class="v">${esc(p.expertRole)||'—'}</div></div>
+        <div class="ro"><div class="k">Status</div><div class="v">${esc(p.status)}</div></div>
       </div>
-      <div class="section-title">Your inputs — required to close the project (Rule e)</div>
-      <div class="grid2">
-        <div><label class="req">7 · Project Estimate (₹)</label><input class="field" id="f_est" type="number" value="${p.estimate??''}"/></div>
-        <div><label class="req">8 · Date of Estimate Shared</label><input class="field" id="f_date" type="date" value="${p.dateEstimateShared?new Date(p.dateEstimateShared).toISOString().slice(0,10):''}"/></div>
-        <div><label class="req">9 · Total Project Cost (after TDS) (₹)</label><input class="field" id="f_total" type="number" value="${p.totalCostAfterTDS??''}"/></div>
-        <div><label class="req">10 · Internal Cost (₹)</label><input class="field" id="f_int" type="number" value="${p.internalCost??''}"/></div>
-        <div><label class="req">11 · External Cost (₹)</label><input class="field" id="f_ext" type="number" value="${p.externalCost??''}"/></div>
-        <div><label class="req">12 · Final Closing Cost (₹)</label><input class="field" id="f_close" type="number" value="${p.finalClosingCost??''}"/></div>
-        <div><label>13 · Final Closing Sheet (link)</label><input class="field" id="f_link" value="${esc(link)}" placeholder="paste link or assign in Tab 6"/></div>
-        <div><label class="req">14 · Final Gross Profit (₹)</label><input class="field" id="f_gross" type="number" value="${p.finalGrossProfit??''}"/></div>
-        <div><label class="req">15 · Final Net Profit (₹)</label><input class="field" id="f_net" type="number" value="${p.finalNetProfit??''}"/></div>
+
+      <div class="section-title">① Project value &amp; TDS</div>
+      <div class="grid3">
+        <div><label class="req">Project Value (After TDS) ₹ <small style="color:var(--exp)">START HERE</small></label><input class="field" id="fn_after" type="number" value="${c.afterTDSValue}"/></div>
+        <div><label>TDS %</label><input class="field" id="fn_tds" type="number" value="${c.tdsPct}"/></div>
+        <div><label>Date of Estimate Shared</label><input class="field" id="fn_date" type="date" value="${p.dateEstimateShared?new Date(p.dateEstimateShared).toISOString().slice(0,10):''}"/></div>
       </div>
-      <div class="note">Auto‑suggest: Gross = (Cost after TDS − External) · Net = (Gross − Internal − Closing).
-        <button class="btn btn-sm btn-ghost" id="autoCalc">Auto‑fill 14 &amp; 15</button></div>
-      <p class="note">If 7–15 aren't all filled, the project stays <b>Active</b> even when marked Completed.</p>
+      <div class="wfbox">
+        <div class="wfrow"><span>TDS <small>(PH fee — added on top)</small></span><b id="fcTds">${INR(cc.tds)}</b></div>
+        <div class="wfrow"><span>Total Project Value (excl GST) <small>shared to client</small></span><b id="fcTotal">${INR(cc.total)}</b></div>
+        <div class="wfrow strong"><span>Project Value (After TDS) <small>base</small></span><b id="fcAfter">${INR(cc.afterTDS)}</b></div>
+      </div>
+
+      <div class="section-title">② Profit margin</div>
+      <div class="grid3"><div><label>Profit Margin %</label><input class="field" id="fn_margin" type="number" value="${c.marginPct}"/></div></div>
+      <div class="wfbox">
+        <div class="wfrow"><span>Profit Margin <small>(Sugar Shot)</small></span><b id="fcMargin">${INR(cc.margin)}</b></div>
+        <div class="wfrow"><span>Project Value (After Profit Margin)</span><b id="fcAfterMargin">${INR(cc.afterMargin)}</b></div>
+      </div>
+
+      <div class="section-title">③ Internal Cost <small style="text-transform:none;letter-spacing:0">— resources from within the company</small></div>
+      ${intRows}
+      <button class="btn btn-sm btn-ghost addrow" id="fnAddInt">+ Add internal item</button>
+      <div class="wfbox">
+        <div class="wfrow"><span>Internal Cost (total)</span><b id="fcInternal">${INR(cc.internal)}</b></div>
+        <div class="wfrow strong"><span>Project Value (After Internal Cost) <small>= EXTERNAL BUDGET</small></span><b id="fcBudget">${INR(cc.externalBudget)}</b></div>
+      </div>
+
+      <div class="section-title">④ External Cost — actual spend</div>
+      ${spRows}
+      <button class="btn btn-sm btn-ghost addrow" id="fnAddSp">+ Add spend item</button>
+      <div class="wfbox"><div class="wfrow"><span>Total Amount Spent</span><b id="fcSpent">${INR(cc.spent)}</b></div></div>
+
+      <div class="section-title">⑤ Outcome</div>
+      <div class="wfbox">
+        <div class="wfrow strong"><span>Money Saved <small>(Budget − Spent)</small></span><b id="fcSaved" style="color:${cc.moneySaved<0?'var(--bad)':'var(--ok)'}">${INR(cc.moneySaved)}</b></div>
+        <div class="wfrow"><span>Total Profit <small>(margin + internal + saved)</small></span><b id="fcTotalP">${INR(cc.totalProfit)}</b></div>
+        <div class="wfrow strong"><span>Actual Profit <small>(margin + saved)</small></span><b id="fcActualP" style="color:${cc.actualProfit<0?'var(--bad)':'var(--ok)'}">${INR(cc.actualProfit)}</b></div>
+      </div>
+
+      <label style="margin-top:10px">Final Closing Sheet (link)</label><input class="field" id="fn_link" value="${esc(c.closingLink||'')}" placeholder="paste link"/>
+      <p class="note">Live formulas from your cost sheet: TDS is added on top of the After‑TDS value; Margin % and Internal Cost are taken off; what remains is the External Budget; Money Saved = Budget − Spent.</p>
     </div>
     <div class="modal-foot">
       <button class="btn btn-ghost" data-close>Cancel</button>
-      <button class="btn btn-sup" id="saveFin" data-pid="${pid}">Save financials</button>
+      <button class="btn btn-sup" id="saveFin">Save cost breakdown</button>
     </div></div>`;
 }
 
@@ -1068,12 +1160,12 @@ function openFormulation(fid){
   const src = fid ? DB.formulations.find(x=>x.id===fid) : null;
   editingForm = src ? JSON.parse(JSON.stringify(src))
     : {id:null,title:'',afterTDSValue:0,tdsPct:10,marginPct:30,internalItems:[{desc:'',amount:0}],
-       estimateItems:[{desc:'',qty:1,rate:0}],productionFeePct:10,gstPct:18,notes:'',locked:false,assignedProjectId:null};
+       estimateItems:[{desc:'',qty:1,rate:0}],notes:'',locked:false};
   openModal(modalFormulation());
 }
 function modalFormulation(){
   const f = editingForm; const ro = f.locked; const cf = computeFormulation(f);
-  const projOpts = `<option value="">— choose project —</option>`+DB.projects.map(p=>`<option value="${p.id}" ${f.assignedProjectId===p.id?'selected':''}>${esc(p.projectName)}</option>`).join('');
+  const fSaved = cf.externalBudget - cf.estTotal, fTotalP = cf.margin + cf.internal + fSaved, fActualP = cf.margin + fSaved;
   const intRows = (f.internalItems||[]).map((it,i)=>`<div class="linerow">
      <input class="field" data-int-desc="${i}" value="${esc(it.desc)}" placeholder="Resource / cost (e.g. Editing)" ${ro?'disabled':''}/>
      <input class="field" data-int-amt="${i}" type="number" value="${it.amount}" placeholder="₹" ${ro?'disabled':''}/>
@@ -1087,7 +1179,7 @@ function modalFormulation(){
   return `<div class="modal lg"><div class="modal-head"><h3>${f.id?esc(f.title):'New Formulation Sheet'}</h3>
       ${f.locked?'<span class="badge b-locked" style="margin-left:8px">Locked</span>':''}<button class="x" data-close>×</button></div>
     <div class="modal-body">
-      <label class="req">Sheet title</label><input class="field" id="fm_title" value="${esc(f.title)}" ${ro?'disabled':''}/>
+      <label class="req">Project name</label><input class="field" id="fm_title" value="${esc(f.title)}" placeholder="e.g. Tanishq Festive TVC" ${ro?'disabled':''}/>
 
       <div class="section-title">① Cost Formulation — profit waterfall</div>
       <div class="grid3">
@@ -1096,9 +1188,9 @@ function modalFormulation(){
         <div><label>Profit Margin %</label><input class="field" id="fm_margin" type="number" value="${f.marginPct}" ${ro?'disabled':''}/></div>
       </div>
       <div class="wfbox">
+        <div class="wfrow strong"><span>Total Project Value (excl GST) <small>shared to client</small></span><b id="cTotal">${INR(cf.total)}</b></div>
         <div class="wfrow"><span>TDS <small>(PH fee — added on top)</small></span><b id="cTds">${INR(cf.tds)}</b></div>
-        <div class="wfrow"><span>Total Project Value (excl GST) <small>shared to client</small></span><b id="cTotal">${INR(cf.total)}</b></div>
-        <div class="wfrow strong"><span>Project Value (After TDS) <small>base</small></span><b id="cAfterTDS">${INR(cf.afterTDS)}</b></div>
+        <div class="wfrow"><span>Project Value (After TDS) <small>base · START HERE</small></span><b id="cAfterTDS">${INR(cf.afterTDS)}</b></div>
         <div class="wfrow"><span>Profit Margin <small>(Sugar Shot)</small></span><b id="cMargin">${INR(cf.margin)}</b></div>
         <div class="wfrow"><span>Project Value (After Profit Margin)</span><b id="cAfterMargin">${INR(cf.afterMargin)}</b></div>
       </div>
@@ -1111,29 +1203,19 @@ function modalFormulation(){
         <div class="wfrow strong"><span>Project Value (After Internal Cost) <small>= EXTERNAL BUDGET</small></span><b id="cBudget">${INR(cf.externalBudget)}</b></div>
       </div>
 
-      <div class="section-title">② Production Estimate — planned external (shared to client)</div>
+      <div class="section-title">② Production Estimate — planned external</div>
       <div class="linerow est" style="margin-bottom:4px;color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.4px">
         <span>Item</span><span>Qty</span><span>Rate ₹</span><span style="text-align:right">Amount</span><span></span></div>
       ${estRows}
       ${ro?'':'<button class="btn btn-sm btn-ghost addrow" id="addEst">+ Add line item</button>'}
-      <div class="grid2" style="margin-top:6px">
-        <div><label>Production Fee %</label><input class="field" id="fm_fee" type="number" value="${f.productionFeePct}" ${ro?'disabled':''}/></div>
-        <div><label>GST % (CGST + SGST)</label><input class="field" id="fm_gst" type="number" value="${f.gstPct}" ${ro?'disabled':''}/></div>
-      </div>
       <div class="wfbox">
-        <div class="wfrow"><span>Estimate Total</span><b id="cEstTotal">${INR(cf.estTotal)}</b></div>
-        <div class="wfrow"><span>Production Fee</span><b id="cFee">${INR(cf.prodFee)}</b></div>
-        <div class="wfrow"><span>Sub Total</span><b id="cSub">${INR(cf.estSub)}</b></div>
-        <div class="wfrow"><span>CGST</span><b id="cCgst">${INR(cf.cgst)}</b></div>
-        <div class="wfrow"><span>SGST</span><b id="cSgst">${INR(cf.sgst)}</b></div>
-        <div class="wfrow strong"><span>Grand Total <small>(incl GST)</small></span><b id="cGrand">${INR(cf.estGrand)}</b></div>
+        <div class="wfrow strong"><span>Estimate Total</span><b id="cEstTotal">${INR(cf.estTotal)}</b></div>
       </div>
       <p class="note" id="cCompare"></p>
 
-      <div class="section-title">Assign &amp; notes</div>
-      <div><label>Assign to project</label><select class="field" id="fm_proj" ${ro?'disabled':''}>${projOpts}</select></div>
-      <label style="margin-top:10px">Notes</label><textarea class="field" id="fm_notes" rows="2" ${ro?'disabled':''}>${esc(f.notes)}</textarea>
-      <p class="note">${f.locked?'Locked &amp; assigned — this sheet cannot be edited.':'Click “Formulation Locked” to assign to the selected project. Until then it stays <b>Unassigned</b>.'}</p>
+      <div class="section-title">Notes</div>
+      <textarea class="field" id="fm_notes" rows="2" ${ro?'disabled':''}>${esc(f.notes)}</textarea>
+      <p class="note">${f.locked?'Locked — this sheet cannot be edited.':'Click “Formulation Locked” to lock this sheet.'}</p>
     </div>
     <div class="modal-foot">
       <button class="btn btn-ghost" data-close>Close</button>
@@ -1194,34 +1276,30 @@ function modalClosing(){
     </div></div>`;
 }
 
-/* ---- Business report popup (built from the locked formulation + closing) ---- */
-function modalReport(cid){
-  const c = DB.closings.find(x=>x.id===cid);
-  const proj = DB.projects.find(p=>p.id===c.assignedProjectId);
-  const f = formulationOfProject(c.assignedProjectId);
-  const cf = computeFormulation(f||{});
-  const cc = computeClosing(c, f);
-  const actualMarginPct = cf.afterTDS ? (cc.actualProfit/cf.afterTDS*100) : 0;
-  const totalMarginPct = cf.afterTDS ? (cc.totalProfit/cf.afterTDS*100) : 0;
+/* ---- Business report popup (built from the project's Cost Breakdown) ---- */
+function modalReport(pid){
+  const p = DB.projects.find(x=>x.id===pid);
   const rep=(k,v,cls='')=>`<div class="rep ${cls}"><div class="k">${k}</div><div class="v">${v}</div></div>`;
-  if(!f) return `<div class="modal"><div class="modal-head" style="border-top:3px solid var(--exp)"><h3>📊 Business Report</h3><button class="x" data-close>×</button></div>
-    <div class="modal-body"><p class="note" style="color:var(--warn)">This project has no locked <b>formulation sheet</b> assigned, so profit can't be computed. Lock a formulation for “${esc(proj?proj.projectName:'')}” first.</p></div>
+  if(!p || !p.cost) return `<div class="modal"><div class="modal-head" style="border-top:3px solid var(--exp)"><h3>📊 Business Report</h3><button class="x" data-close>×</button></div>
+    <div class="modal-body"><p class="note">No cost breakdown saved for this project yet. Open <b>Cost breakdown</b> on the project and fill it first.</p></div>
     <div class="modal-foot"><button class="btn btn-sup" data-close>Done</button></div></div>`;
+  const cc = computeCost(p.cost);
+  const actualMarginPct = cc.afterTDS ? (cc.actualProfit/cc.afterTDS*100) : 0;
+  const totalMarginPct  = cc.afterTDS ? (cc.totalProfit/cc.afterTDS*100) : 0;
   return `<div class="modal lg"><div class="modal-head" style="border-top:3px solid var(--exp)">
-      <h3>📊 Business Report — ${esc(proj?proj.projectName:c.title)}</h3><button class="x" data-close>×</button></div>
+      <h3>📊 Business Report — ${esc(p.projectName)}</h3><button class="x" data-close>×</button></div>
     <div class="modal-body">
       <div class="report-grid">
         ${rep('Actual Profit', `<b style="color:${cc.actualProfit<0?'var(--bad)':'var(--ok)'}">${INR(cc.actualProfit)} <small>(${PCT(actualMarginPct)})</small></b>`,'hero')}
-        ${rep('Total Project Value (excl GST)', INR(cf.total))}
-        ${rep('TDS deduction', INR(cf.tds))}
-        ${rep('Project Value (After TDS)', INR(cf.afterTDS))}
-        ${rep('Profit Margin', `${INR(cf.margin)} <small>(${PCT(num(f.marginPct))})</small>`)}
-        ${rep('Internal Cost', INR(cf.internal))}
-        ${rep('External Budget', INR(cf.externalBudget))}
-        ${rep('Total Amount Spent', INR(cc.spent), cc.spent>cf.externalBudget?'bad':'good')}
+        ${rep('Total Project Value (excl GST)', INR(cc.total))}
+        ${rep('TDS', INR(cc.tds))}
+        ${rep('Project Value (After TDS)', INR(cc.afterTDS))}
+        ${rep('Profit Margin', `${INR(cc.margin)} <small>(${PCT(num(p.cost.marginPct))})</small>`)}
+        ${rep('Internal Cost', INR(cc.internal))}
+        ${rep('External Budget', INR(cc.externalBudget))}
+        ${rep('Total Amount Spent', INR(cc.spent), cc.spent>cc.externalBudget?'bad':'good')}
         ${rep('Money Saved', INR(cc.moneySaved), cc.moneySaved<0?'bad':'good')}
         ${rep('Total Profit', `${INR(cc.totalProfit)} <small>(${PCT(totalMarginPct)})</small>`, cc.totalProfit<0?'bad':'good')}
-        ${rep('Production Estimate (Grand Total incl GST)', INR(cf.estGrand))}
       </div>
       <p class="note">External budget was ${cc.moneySaved>=0?`under‑spent by ${INR(cc.moneySaved)} ✓`:`over‑spent by ${INR(-cc.moneySaved)} ⚠`}. Total Profit = Margin + Internal Cost + Money Saved; Actual Profit = Margin + Money Saved.</p>
     </div>
@@ -1319,7 +1397,7 @@ function wire(){
   $('forceReset')&&($('forceReset').onclick=()=>openModal(modalReset()));
 
   // supervisor financial editor
-  document.querySelectorAll('[data-editfin]').forEach(el=>el.onclick=()=>openModal(modalFinancials(el.dataset.editfin)));
+  document.querySelectorAll('[data-editfin]').forEach(el=>el.onclick=()=>openFinancials(el.dataset.editfin));
   // review / view
   document.querySelectorAll('[data-review]').forEach(el=>el.onclick=()=>openModal(modalReview(el.dataset.review)));
   document.querySelectorAll('[data-viewproj]').forEach(el=>el.onclick=()=>openModal(modalEditMine(el.dataset.viewproj, true)));
@@ -1349,22 +1427,46 @@ function wireModal(){
   ov.addEventListener('mousedown',e=>{ if(e.target===ov) closeModal(); });
   document.querySelectorAll('[data-close]').forEach(el=>el.onclick=closeModal);
 
-  // --- save financials ---
-  $('autoCalc')&&($('autoCalc').onclick=()=>{
-    const total=+$('f_total').value||0, ext=+$('f_ext').value||0, intc=+$('f_int').value||0, cl=+$('f_close').value||0;
-    const gross=total-ext, net=gross-intc-cl;
-    $('f_gross').value=gross; $('f_net').value=net;
-  });
-  $('saveFin')&&($('saveFin').onclick=()=>{
-    const p=DB.projects.find(x=>x.id===$('saveFin').dataset.pid);
-    const g=v=>{const e=$(v).value; return e===''?null:Number(e);};
-    p.estimate=g('f_est'); p.dateEstimateShared=$('f_date').value?new Date($('f_date').value).getTime():null;
-    p.totalCostAfterTDS=g('f_total'); p.internalCost=g('f_int'); p.externalCost=g('f_ext');
-    p.finalClosingCost=g('f_close'); p.closingSheetLink=$('f_link').value;
-    p.finalGrossProfit=g('f_gross'); p.finalNetProfit=g('f_net');
-    save(); closeModal(); render();
-    toast(financialsComplete(p)?'Saved — project can now be closed':'Saved (still missing some required fields)');
-  });
+  // --- project cost breakdown (live recalc; draft = editingFin) ---
+  function syncFin(){
+    const c=editingFin; if(!c) return;
+    if($('fn_after')) c.afterTDSValue=num($('fn_after').value);
+    if($('fn_tds')) c.tdsPct=num($('fn_tds').value);
+    if($('fn_margin')) c.marginPct=num($('fn_margin').value);
+    if($('fn_link')) c.closingLink=$('fn_link').value;
+    (c.internalItems||[]).forEach((it,i)=>{const d=document.querySelector('[data-fint-desc="'+i+'"]'),a=document.querySelector('[data-fint-amt="'+i+'"]'); if(d)it.desc=d.value; if(a)it.amount=num(a.value);});
+    (c.spentItems||[]).forEach((it,i)=>{const d=document.querySelector('[data-fsp-desc="'+i+'"]'),a=document.querySelector('[data-fsp-amt="'+i+'"]'); if(d)it.desc=d.value; if(a)it.amount=num(a.value);});
+  }
+  function paintFin(){
+    const cc=computeCost(editingFin); const set=(id,v,col)=>{const e=$(id); if(e){e.textContent=v; if(col!==undefined)e.style.color=col;}};
+    set('fcTds',INR(cc.tds)); set('fcTotal',INR(cc.total)); set('fcAfter',INR(cc.afterTDS));
+    set('fcMargin',INR(cc.margin)); set('fcAfterMargin',INR(cc.afterMargin));
+    set('fcInternal',INR(cc.internal)); set('fcBudget',INR(cc.externalBudget)); set('fcSpent',INR(cc.spent));
+    set('fcSaved',INR(cc.moneySaved), cc.moneySaved<0?'var(--bad)':'var(--ok)');
+    set('fcTotalP',INR(cc.totalProfit)); set('fcActualP',INR(cc.actualProfit), cc.actualProfit<0?'var(--bad)':'var(--ok)');
+  }
+  if($('fn_after')){
+    const rc=()=>{syncFin(); paintFin();};
+    ['fn_after','fn_tds','fn_margin'].forEach(id=>$(id)&&($(id).oninput=rc));
+    document.querySelectorAll('[data-fint-desc],[data-fint-amt],[data-fsp-desc],[data-fsp-amt]').forEach(el=>el.oninput=rc);
+    $('fn_link')&&($('fn_link').oninput=syncFin);
+    document.querySelectorAll('[data-fint-del]').forEach(el=>el.onclick=()=>{syncFin(); editingFin.internalItems.splice(+el.dataset.fintDel,1); openModal(modalFinancials());});
+    document.querySelectorAll('[data-fsp-del]').forEach(el=>el.onclick=()=>{syncFin(); editingFin.spentItems.splice(+el.dataset.fspDel,1); openModal(modalFinancials());});
+    $('fnAddInt')&&($('fnAddInt').onclick=()=>{syncFin(); editingFin.internalItems.push({desc:'',amount:0}); openModal(modalFinancials());});
+    $('fnAddSp')&&($('fnAddSp').onclick=()=>{syncFin(); editingFin.spentItems.push({desc:'',amount:0}); openModal(modalFinancials());});
+    $('saveFin')&&($('saveFin').onclick=()=>{
+      syncFin(); const p=DB.projects.find(x=>x.id===editingFinPid); const c=editingFin; const cc=computeCost(c);
+      p.cost=c;
+      p.dateEstimateShared = ($('fn_date')&&$('fn_date').value) ? new Date($('fn_date').value).getTime() : p.dateEstimateShared;
+      // mirror into the project columns (7–15) so the table + close logic keep working
+      p.estimate=cc.total; p.totalCostAfterTDS=cc.afterTDS; p.internalCost=cc.internal;
+      p.externalCost=cc.externalBudget; p.finalClosingCost=cc.spent;
+      p.finalGrossProfit=cc.totalProfit; p.finalNetProfit=cc.actualProfit;
+      p.closingSheetLink=c.closingLink||p.closingSheetLink;
+      editingFin=null; save(); closeModal(); render();
+      toast(financialsComplete(p)?'Cost breakdown saved — project can now be closed':'Cost breakdown saved');
+    });
+  }
 
   // --- save expert 1-6 / create ---
   $('saveMine')&&($('saveMine').onclick=()=>{
@@ -1429,10 +1531,7 @@ function wireModal(){
     if($('fm_after')) f.afterTDSValue=num($('fm_after').value);
     if($('fm_tds')) f.tdsPct=num($('fm_tds').value);
     if($('fm_margin')) f.marginPct=num($('fm_margin').value);
-    if($('fm_fee')) f.productionFeePct=num($('fm_fee').value);
-    if($('fm_gst')) f.gstPct=num($('fm_gst').value);
     if($('fm_notes')) f.notes=$('fm_notes').value;
-    if($('fm_proj')) f.assignedProjectId=$('fm_proj').value||null;
     (f.internalItems||[]).forEach((it,i)=>{const d=document.querySelector('[data-int-desc="'+i+'"]'),a=document.querySelector('[data-int-amt="'+i+'"]'); if(d)it.desc=d.value; if(a)it.amount=num(a.value);});
     (f.estimateItems||[]).forEach((it,i)=>{const d=document.querySelector('[data-est-desc="'+i+'"]'),q=document.querySelector('[data-est-qty="'+i+'"]'),r=document.querySelector('[data-est-rate="'+i+'"]'); if(d)it.desc=d.value; if(q)it.qty=num(q.value); if(r)it.rate=num(r.value);});
   }
@@ -1440,7 +1539,7 @@ function wireModal(){
     const cf=computeFormulation(editingForm); const set=(id,v)=>{const e=$(id); if(e)e.textContent=v;};
     set('cTds',INR(cf.tds)); set('cTotal',INR(cf.total)); set('cAfterTDS',INR(cf.afterTDS)); set('cMargin',INR(cf.margin)); set('cAfterMargin',INR(cf.afterMargin));
     set('cInternal',INR(cf.internal)); set('cBudget',INR(cf.externalBudget));
-    set('cEstTotal',INR(cf.estTotal)); set('cFee',INR(cf.prodFee)); set('cSub',INR(cf.estSub)); set('cCgst',INR(cf.cgst)); set('cSgst',INR(cf.sgst)); set('cGrand',INR(cf.estGrand));
+    set('cEstTotal',INR(cf.estTotal));
     (editingForm.estimateItems||[]).forEach((it,i)=>set('estamt_'+i, INR(num(it.qty||1)*num(it.rate))));
     const cmp=$('cCompare'); if(cmp){const diff=cf.externalBudget-cf.estTotal;
       cmp.textContent=diff>=0?('Planned estimate is '+INR(diff)+' under the external budget ✓'):('Planned estimate is '+INR(-diff)+' OVER the external budget ⚠');
@@ -1448,17 +1547,15 @@ function wireModal(){
   }
   function saveForm(lock){
     syncForm(); const f=editingForm;
-    if(!f.title||!f.title.trim()){toast('Sheet title is required');return;}
-    if(lock && !f.assignedProjectId){toast('Choose a project to assign before locking');return;}
+    if(!f.title||!f.title.trim()){toast('Project name is required');return;}
     f.locked=!!lock;
     if(f.id){const i=DB.formulations.findIndex(x=>x.id===f.id); DB.formulations[i]=f;}
     else{f.id=uid(); f.createdAt=now(); DB.formulations.unshift(f);}
-    if(lock){const proj=DB.projects.find(p=>p.id===f.assignedProjectId); if(proj) proj.formulationId=f.id;}
-    editingForm=null; save(); closeModal(); render(); toast(lock?'🔒 Formulation locked & assigned':'Draft saved — Unassigned');
+    editingForm=null; save(); closeModal(); render(); toast(lock?'🔒 Formulation locked':'Draft saved');
   }
   if($('fm_title')){
     const recalc=()=>{syncForm(); paintForm();};
-    ['fm_total','fm_tds','fm_margin','fm_fee','fm_gst'].forEach(id=>$(id)&&($(id).oninput=recalc));
+    ['fm_after','fm_tds','fm_margin'].forEach(id=>$(id)&&($(id).oninput=recalc));
     document.querySelectorAll('[data-int-desc],[data-int-amt],[data-est-desc],[data-est-qty],[data-est-rate]').forEach(el=>el.oninput=recalc);
     $('fm_title')&&($('fm_title').oninput=syncForm); $('fm_notes')&&($('fm_notes').oninput=syncForm); $('fm_proj')&&($('fm_proj').onchange=syncForm);
     document.querySelectorAll('[data-int-del]').forEach(el=>el.onclick=()=>{syncForm(); editingForm.internalItems.splice(+el.dataset.intDel,1); openModal(modalFormulation());});
@@ -1532,6 +1629,23 @@ function toast(msg){
 /* =========================== BOOT =========================== */
 if(DB.session){ state = DB.session.role==='sup' ? {screen:'app-sup',tab:'active'} : {screen:'app-exp',tab:'mine'}; }
 render();
+
+/* =========================== TEAM PASSCODE GATE =========================== */
+/* Light protection so a shared link isn't wide open. Change this to your own code.
+   Note: this is client-side (deters casual access only) — real security needs a backend login. */
+const SS_PASSCODE = 'SugarShot@2026';
+(function(){
+  const gate=$('gate'); if(!gate) return;
+  if(localStorage.getItem('ss_team_ok')==='1'){ gate.style.display='none'; return; }
+  gate.style.display='grid';
+  const enter=()=>{
+    if($('gateInput').value===SS_PASSCODE){ localStorage.setItem('ss_team_ok','1'); gate.style.display='none'; }
+    else { $('gateErr').textContent='Incorrect passcode.'; $('gateInput').value=''; }
+  };
+  $('gateBtn').onclick=enter;
+  $('gateInput').addEventListener('keydown',e=>{ if(e.key==='Enter') enter(); });
+  $('gateInput').focus();
+})();
 </script>
 </body>
 </html>
